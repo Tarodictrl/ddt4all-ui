@@ -1,19 +1,23 @@
 # DDT4ALL
 
-[![Build](https://github.com/cedricp/ddt4all/actions/workflows/python-app.yml/badge.svg)](https://github.com/cedricp/ddt4all/actions/workflows/python-app.yml)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=cedricpaille%40gmail.com&item_name=codetronic&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
-[![Sponsor](https://img.shields.io/badge/💖%20Sponsor-Support%20me-ea4aaa)](https://github.com/sponsors/Furtif)
-[![Discord](https://img.shields.io/discord/1117970325267820675?label=Discord&style=flat-square)](https://discord.gg/cBqDh9bTHP)
+[![Build packages](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/build.yml/badge.svg)](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/build.yml)
+[![Tests](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/python-app.yml/badge.svg)](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/python-app.yml)
+[![Latest release](https://img.shields.io/github/v/release/Tarodictrl/ddt4all-ui?label=release)](https://github.com/Tarodictrl/ddt4all-ui/releases/latest)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-GPL%203.0-green.svg)](https://opensource.org/licenses/GPL-3.0)
+[![License](https://img.shields.io/badge/License-GPL%203.0-green.svg)](license.txt)
 
 DDT4ALL is a cross-platform diagnostic application for CAN bus vehicle networks.
 It lets you **create your own ECU parameter screens** and **communicate with ECUs**
 through various OBD-II interfaces, including ELM327, Vlinker FS, VGate iCar Pro,
 OBDLink SX/EX and ELS27 adapters.
 
+> **This is a fork of [cedricp/ddt4all](https://github.com/cedricp/ddt4all)** with a redesigned
+> user interface (Fluent light/dark theme, live charts) and ready-made packages for
+> Windows, Linux and macOS built by CI. Diagnostic functionality comes from upstream;
+> the original author and contributors are credited [below](#credits-and-support).
+
 - **Current version:** `v3.1.3` (Celestial Nemean)
-- **License:** [GPL-3.0-or-later](https://opensource.org/licenses/GPL-3.0)
+- **License:** [GPL-3.0-or-later](license.txt)
 
 ---
 
@@ -26,8 +30,96 @@ OBDLink SX/EX and ELS27 adapters.
 
 ---
 
+## What's new in this fork
+
+### Fluent theme
+
+A light Fluent-style look with a matching dark variant, applied from a single QSS
+template. Switch it in **View → Theme** (*Light Theme* / *Dark Theme*). The status bar
+shows a connection pill (`CONNECTED` / `DISCONNECTED` / `EDITION MODE`), the protocol,
+scan messages and the refresh rate / CAN timeout fields.
+
+### Live charts
+
+A bottom **Charts** dock plots ECU parameters in real time, one lane per parameter
+(own Y scale, shared time axis and cursor).
+
+1. Open an ECU screen and start polling (connect an adapter or use simulation).
+2. **Right-click a value** on the screen and choose **Add to chart** (up to 8 lanes;
+   use *Remove from chart* or the lane's `×` to drop one).
+3. Pick the window: **30 / 60 / 120 / 300 s**. **Pause** freezes the view while data
+   keeps buffering; while paused the **mouse wheel** scrolls back in time. **Resume** returns to now.
+4. **CSV** exports the whole buffer of all lanes; **Clear** empties the data but keeps the lanes.
+
+Show or hide the dock via **View → Panels → Charts** or the *Charts* toolbar button.
+Dock layout and the chart window size are restored on the next start.
+To try the panel without an adapter: `python -m ddt4all.ui.charts.demo [--dark]`.
+
+---
+
+## Download
+
+Get the file for your platform from the
+[**latest release**](https://github.com/Tarodictrl/ddt4all-ui/releases/latest)
+(`<version>` is the release number, e.g. `3.1.3`).
+
+| Platform | File | Install |
+|----------|------|---------|
+| Windows x64 installer | `DDT4ALL-<version>-windows-x64-setup.exe` | Run the installer |
+| Windows x86 (32-bit) installer | `DDT4ALL-<version>-windows-x86-setup.exe` | Run the installer |
+| Windows portable | `DDT4ALL-<version>-windows-x64-portable.zip` | Unzip to a writable folder, run `DDT4ALL\DDT4ALL.exe` |
+| Debian / Ubuntu | `DDT4ALL-<version>-linux-x86_64.deb` | `sudo apt install ./DDT4ALL-<version>-linux-x86_64.deb` |
+| Fedora / RHEL / openSUSE | `DDT4ALL-<version>-linux-x86_64.rpm` | `sudo dnf install ./DDT4ALL-<version>-linux-x86_64.rpm` |
+| Linux AppImage | `DDT4ALL-<version>-linux-x86_64.AppImage` | `chmod +x DDT4ALL-<version>-linux-x86_64.AppImage` then run it |
+| macOS (Apple Silicon) | `DDT4ALL-<version>-macos-arm64.dmg` | Open the dmg, drag `DDT4ALL` to *Applications* |
+
+Notes:
+
+- **macOS** builds are not signed or notarized. On first launch use right-click →
+  **Open**, or remove the quarantine flag:
+  `xattr -dr com.apple.quarantine /Applications/DDT4ALL.app`
+- **AppImage** needs FUSE (`libfuse2` on recent Ubuntu/Debian).
+- **Linux**: add your user to the `dialout` group for serial adapters (see [Platform notes](#platform-notes)).
+- **Test builds:** every pull request and every push to `master` builds all packages
+  as CI artifacts, kept for 14 days: GitHub → **Actions** → *Build packages* → pick a run →
+  **Artifacts**. Their version looks like `3.1.3-dev.<commit>`.
+
+---
+
+## ECU database location
+
+DDT4ALL does **not** ship the ECU database. It looks for `ecu.zip` (or an extracted
+`ecus/` folder with `eculist.xml`) in its **working directory**, which depends on the build:
+
+| Build | Put `ecu.zip` / `ecus/` in |
+|-------|----------------------------|
+| Windows portable zip | the folder that contains `DDT4ALL.exe` |
+| Windows installer (x64 / x86) | the install folder (default `C:\Program Files\DDT4ALL`); the shortcuts start the app there. **The installer deletes this folder on reinstall, upgrade and uninstall, so keep a copy of `ecu.zip` elsewhere.** |
+| `.deb` / `.rpm` | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
+| macOS `.dmg` | `~/Library/Application Support/ddt4all/` (created on first run) |
+| AppImage | the current directory of the process that starts it: run it from a terminal in the folder holding `ecu.zip` |
+| Run from source | the directory you run `python -m ddt4all` from |
+
+The PyInstaller builds (portable zip, `.deb`, `.rpm`, `.dmg`) start through a small launcher
+([`launcher.py`](setup_tools/pyinstaller/launcher.py)) that switches to the folder above before the
+app starts. Set `DDT4ALL_HOME` to use another folder:
+
+```bash
+DDT4ALL_HOME=/data/ddt4all ddt4all             # Linux / macOS
+```
+```powershell
+$env:DDT4ALL_HOME = "D:\ddt4all"; .\DDT4ALL.exe   # Windows portable
+```
+
+`DDT4ALL_HOME` is read only by that launcher; the AppImage and the Windows installer run
+`python -m ddt4all` directly and ignore it. The normal builds have no console window; for
+troubleshooting build with `DDT4ALL_CONSOLE=1` (see [Building packages locally](#building-packages-locally)).
+
+---
+
 ## Features
 
+- **Modern UI**: Fluent light/dark theme, restyled status bar and live charts (see [What's new](#whats-new-in-this-fork)).
 - **Diagnostics**: Read / Clear DTC, manual ECU requests, auto-scan ECUs, live parameter monitoring.
 - **Screens**: Custom ECU parameter screens designer, screen recorder, data editor.
 - **Networks**: CAN bus sniffing (with live non-blocking capture), DoIP, KWP2000.
@@ -95,7 +187,9 @@ and no `#, fuzzy` remains), keep valid gettext syntax and preserve the original
 
 ---
 
-## Requirements
+## Run from source
+
+Requirements:
 
 - **Python** `>=3.8` (3.10 or newer recommended)
 - **PyQt5** `>=5.15, <5.16` — GUI framework
@@ -106,50 +200,56 @@ and no `#, fuzzy` remains), keep valid gettext syntax and preserve the original
 - **polib**, **platformdirs**
 - **pywin32** `>=227` — Windows (serial)
 
-## Installation
-
-### Modern (recommended)
-
 ```bash
-git clone https://github.com/cedricp/ddt4all.git
-cd ddt4all
+git clone https://github.com/Tarodictrl/ddt4all-ui.git
+cd ddt4all-ui
 python -m venv ./venv
 
-# activate virtual environment
-#   Windows:
-.\venv\Scripts\activate.bat
-#   Linux / macOS:
-source ./venv/bin/activate
+# activate the virtual environment
+#   Windows:        .\venv\Scripts\activate.bat
+#   Linux / macOS:  source ./venv/bin/activate
 
-# install the package (editable for development)
-pip install -e .
-
-# launch application
-ddt4all
-# or
-python -m ddt4all
+pip install -e ".[dev]"      # the package plus pytest and linting tools
+python -m ddt4all            # or simply: ddt4all
 ```
 
-### With optional features
+Charts demo without an adapter: `python -m ddt4all.ui.charts.demo [--dark]`.
+Tests: `QT_QPA_PLATFORM=offscreen pytest` (Windows PowerShell:
+`$env:QT_QPA_PLATFORM="offscreen"; pytest`).
 
-```bash
-pip install -e ".[dev]"                    # pytest, linting
-pip install -e ".[can]"                    # python-can, obd
-pip install -e ".[network]"                # requests, websockets
-pip install -e ".[bluetooth]"              # pybluez / bleak
-# all together:
-pip install -e ".[dev,can,network,bluetooth]"
-```
-
-### Legacy (manual dependencies)
+Other extras: `.[can]` (python-can, obd), `.[network]` (requests, websockets),
+`.[bluetooth]` (pybluez / bleak); combine them, e.g. `pip install -e ".[dev,can,network,bluetooth]"`.
+Plain `pip install -e .` installs only the runtime dependencies. Without the project
+installed, the dependencies can be added by hand:
 
 ```bash
 pip install "PyQt5>=5.15,<5.16" "PyQtWebEngine>=5.15,<5.16" pyserial==3.5 pyusb==1.2.1 crcmod==1.7 polib platformdirs
 ```
 
----
+### Windows: virtualenv path with non-ASCII characters
 
-## Platform notes
+Qt 5 cannot load its `platform` plugin when the virtualenv path contains non-ASCII
+characters (for example a Cyrillic folder name): the app stops with
+*"could not find or load the Qt platform plugin"*. Create the venv in an ASCII path:
+
+```powershell
+python -m venv C:\venvs\ddt4all
+C:\venvs\ddt4all\Scripts\pip install -e ".[dev]"
+C:\venvs\ddt4all\Scripts\python -m ddt4all
+```
+
+The source checkout itself can stay where it is.
+
+### Windows: no wheel for PyQt5-Qt5
+
+If pip cannot find a Windows wheel for `PyQt5-Qt5` >= 5.15.19, pin the older Qt binaries:
+
+```bash
+pip install PyQt5-Qt5==5.15.2 PyQtWebEngine-Qt5==5.15.2
+pip install -e ".[dev]"
+```
+
+### Platform notes
 
 - **Linux** — add the current user to the `dialout` group to access serial ports:
   ```bash
@@ -170,26 +270,12 @@ pip install "PyQt5>=5.15,<5.16" "PyQtWebEngine>=5.15,<5.16" pyserial==3.5 pyusb=
   python3 -m pip install --force-reinstall -e .
   ```
 
-## Quick start
+### Quick start
 
-```bash
-# after a successful install
-ddt4all
-#   or, from source (development mode):
-python -m ddt4all
-```
+Start DDT4ALL, then use the built-in **connection test** to let it auto-detect the adapter
+and the correct baud rate. On discovery, the optimal device configuration is applied.
 
-Use the built-in **connection test** to let DDT4ALL auto-detect the adapter and the
-correct baud rate. On discovery, the optimal device configuration is applied.
-
-### Shortcut / alias (optional)
-
-```bash
-# Linux / macOS
-alias ddt4all-dev='cd /path/to/ddt4all && source ./venv/bin/activate && python -m ddt4all'
-# Windows (PowerShell)
-Set-Alias -Name ddt4all -Value "ddt4all"
-```
+---
 
 ## Plugin system
 
@@ -236,6 +322,8 @@ The plugin architecture allows custom procedures for other ECUs and brands.
 ### Modern UI
 
 - `ui/` — main window, widgets, dialogs
+- `ui/theme/` — light/dark palettes and the QSS template (`resources/styles/fluent.qss`)
+- `ui/charts/` — live charts panel (time-series buffer, lane view, CSV export, `demo.py`)
 - `ui/displaymod/` — display widgets / graphical elements
 - `ui/data_editor/` — ECU qualitative data editing
 - `ui/sniffer/` — CAN sniffing with a QThread-based thread
@@ -260,21 +348,56 @@ The plugin architecture allows custom procedures for other ECUs and brands.
 
 ```bash
 pip install -e ".[dev]"
-pytest
+QT_QPA_PLATFORM=offscreen pytest
 ```
 
-Test suites are in `tests/` (`unit`, `integration`, `smoke`). A GitHub Actions
-workflow (`python-app.yml`) runs the test suite on multiple OSes.
+Test suites are in `tests/` (`unit`, `integration`, `smoke`). The `python-app.yml`
+workflow runs them on Linux, Windows and macOS for every pull request and every push to `master`.
 
-## Distribution / build
+---
 
-- **Windows**: InnoSetup installer under `setup_tools/inno-win-setup/`
-  (`wininstaller.iss`, `version.h`, `win32_deps/`).
-- **macOS**: DMG build via `setup_tools/mac-os/builddmg.sh` (with `main.spec`,
-  `entitlements.plist`).
-- **Linux**: AppImage build scripts / workflow (see `setup_tools/`).
+## Building packages locally
 
-Prebuilt installers are published on the [Releases page](https://github.com/cedricp/ddt4all/releases).
+All scripts take the version **without** a leading `v` (`3.1.3`, or `3.1.3-dev.abc1234`)
+and write to `dist-packages/` (git-ignored); scratch files go to `build/`.
+Optional environment variables: `PYTHON` (interpreter), `DDT4ALL_BUILD_DIR`, `DDT4ALL_OUT_DIR`.
+The scripts install nothing: install the project and PyInstaller first
+(`pip install -e ".[can,network]" pyinstaller`). All PyInstaller builds share
+[`setup_tools/pyinstaller/ddt4all.spec`](setup_tools/pyinstaller/ddt4all.spec); set
+`DDT4ALL_CONSOLE=1` before building to get a build that prints to a console.
+
+| Target | Command | Output | Extra tools |
+|--------|---------|--------|-------------|
+| Windows portable | `powershell -NoProfile -ExecutionPolicy Bypass -File setup_tools/windows/build-portable.ps1 3.1.3` | `dist-packages/DDT4ALL-3.1.3-windows-x64-portable.zip` | PyInstaller |
+| Linux deb + rpm | `bash setup_tools/linux/build-packages.sh 3.1.3` | `dist-packages/DDT4ALL-3.1.3-linux-x86_64.deb` and `.rpm` | PyInstaller, `fpm` (`gem install fpm`), `rpmbuild` (`apt install rpm`) |
+| macOS dmg | `bash setup_tools/mac-os/builddmg.sh 3.1.3` | `dist-packages/DDT4ALL-3.1.3-macos-<arch>.dmg` | PyInstaller, `hdiutil` (built in); optional `CODESIGN_IDENTITY` |
+| Linux AppImage | `bash setup_tools/appimage/build.sh 3.1.3` | `ddt4all-3.1.3-x86_64.AppImage` in the repo root (CI renames it to `DDT4ALL-3.1.3-linux-x86_64.AppImage`) | `wget`; bundles the active Python environment |
+| Windows installer | `ISCC.exe setup_tools\inno-win-setup\wininstaller.iss` (32-bit: `wininstaller-py3.8.6-inno-5-32-bits.iss`) | `setup_tools/inno-win-setup/Output/DDT4ALL-Windows-Installer-v<version>_Celestial-Nemean-<arch>.exe` | Inno Setup 6.2.2 (32-bit script: 5.6.1) and a prepared Python copy, see below |
+
+The Windows installer bundles a full Python. Before compiling, copy a Python install that
+already has the project dependencies (`pip install -e ".[dev,can,network,bluetooth]"`) to
+`\DDT4ALL-Dist-Versions\Python313` on the drive root (32-bit script: `\DDT4ALL-Dist-Versions\Python38-32`).
+The installer takes its version from `setup_tools/inno-win-setup/version.h`.
+More details: [`setup_tools/README.md`](setup_tools/README.md), [`setup_tools/mac-os/README.md`](setup_tools/mac-os/README.md).
+
+---
+
+## Releasing
+
+1. Bump `__version__` in `src/ddt4all/version.py`; keep `pyproject.toml` and
+   `setup_tools/inno-win-setup/version.h` in sync.
+2. Commit and merge to `master`.
+3. Tag and push:
+   ```bash
+   git tag v3.1.4
+   git push origin v3.1.4
+   ```
+4. The *Build packages* workflow ([`build.yml`](.github/workflows/build.yml)) builds all seven
+   packages, and its `release` job publishes a GitHub Release with generated notes and every
+   file attached. The tag name without `v` becomes the version in the file names.
+
+GitHub Actions must be enabled once on the fork (**Actions** tab → enable workflows);
+until then no workflow runs. Only tags starting with `v` create a release.
 
 ---
 
@@ -299,22 +422,34 @@ Prebuilt installers are published on the [Releases page](https://github.com/cedr
 
 ## Documentation & videos
 
-See the project [Wiki](https://github.com/cedricp/ddt4all/wiki) (Android port,
+See the upstream [Wiki](https://github.com/cedricp/ddt4all/wiki) (Android port,
 device notes) and the YouTube channel (CAN sniffing, AirBag DTC, Megane examples).
+Module reference: [`documentation/`](documentation/).
 
-## Community
+## Credits and support
 
-- **Discord**: [Join the community](https://discord.gg/cBqDh9bTHP)
-- **Issues**: [GitHub Issues](https://github.com/cedricp/ddt4all/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/cedricp/ddt4all/discussions)
+DDT4ALL was created by **Cedric Paille** ([cedricp/ddt4all](https://github.com/cedricp/ddt4all)) and
+is developed with the help of many contributors (see `__contributors__` in
+[`src/ddt4all/version.py`](src/ddt4all/version.py)). This fork adds the redesigned UI and the packaging pipeline.
 
-## Contributing
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=cedricpaille%40gmail.com&item_name=codetronic&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+[![Sponsor](https://img.shields.io/badge/💖%20Sponsor-Support%20upstream-ea4aaa)](https://github.com/sponsors/Furtif)
+[![Discord](https://img.shields.io/discord/1117970325267820675?label=Discord&style=flat-square)](https://discord.gg/cBqDh9bTHP)
+
+- **Discord (upstream community)**: [Join](https://discord.gg/cBqDh9bTHP)
+- **Fork issues** (UI, charts, packages, CI): [Tarodictrl/ddt4all-ui issues](https://github.com/Tarodictrl/ddt4all-ui/issues)
+- **Upstream issues** (diagnostics core, devices): [cedricp/ddt4all issues](https://github.com/cedricp/ddt4all/issues)
+- **Upstream discussions**: [GitHub Discussions](https://github.com/cedricp/ddt4all/discussions)
+
+### Contributing
 
 - **Report bugs** — add a screenshot, your `Logs/` file, `[Bug]` in the title, OS + Python + adapter info.
-- **Suggestions / ideas** — open a discussion with `[Suggestion]` in the title.
+- **Suggestions / ideas** — open an issue or discussion with `[Suggestion]` in the title.
 - **Translations** — improve or add language catalogs under `locales/`.
 - **Donations** — financial (PayPal / GitHub Sponsors) and hardware donations
-  (OBD-II interfaces, ECU devices) are welcome to extend device support.
+  (OBD-II interfaces, ECU devices) to the upstream project help extend device support.
+
+---
 
 ## License & disclaimer
 
