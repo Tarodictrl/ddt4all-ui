@@ -63,6 +63,7 @@ plugins_base_dir = BASE_DIR / ".." / ".." / "plugins"
 class MainWidget(widgets.QMainWindow):
     def __init__(self, app, vehicles, parent=None):
         super(MainWidget, self).__init__(parent)
+        self._skip_layout_save = False
         self.setIcon()
         if not options.simulation_mode:
             Path(get_logs_dir()).mkdir(parents=True, exist_ok=True)
@@ -252,8 +253,6 @@ class MainWidget(widgets.QMainWindow):
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treedock_widget)
         self.addDockWidget(core.Qt.BottomDockWidgetArea, self.chartdock)
         self.addDockWidget(core.Qt.BottomDockWidgetArea, self.treedock_logs)
-        self.resizeDocks([self.chartdock, self.treedock_logs], [900, 320], core.Qt.Horizontal)
-        self.resizeDocks([self.chartdock], [280], core.Qt.Vertical)
 
         self.toolbar = self.addToolBar(_("ToolBar"))
         self.toolbar.setObjectName("mainToolbar")
@@ -503,10 +502,12 @@ class MainWidget(widgets.QMainWindow):
         about_content = help_menu.addAction(_("About"))
         about_content.triggered.connect(self.about_content_msg)
 
-        self._restore_window_state()
+        restored = self._restore_window_state()
         self.setConnected(True)
         self.tabbedview.setCurrentIndex(1)
         self.showMaximized()
+        if not restored:
+            core.QTimer.singleShot(0, self._apply_default_dock_sizes)
 
     def about_content_msg(self):
         msgbox = widgets.QMessageBox()
@@ -604,6 +605,7 @@ class MainWidget(widgets.QMainWindow):
     def resetConfig(self):
         """Reset config"""
         options.create_new_config()
+        self._skip_layout_save = True
         msgbox = widgets.QMessageBox()
         appIcon = gui.QIcon(ICON_OBD)
         msgbox.setWindowIcon(appIcon)
@@ -1017,16 +1019,22 @@ class MainWidget(widgets.QMainWindow):
         self.statusbar_widget.showMessage(
             _("Chart limit reached: max %d parameters") % MAX_SERIES, 4000)
 
+    def _apply_default_dock_sizes(self):
+        self.resizeDocks([self.chartdock, self.treedock_logs], [900, 320], core.Qt.Horizontal)
+        self.resizeDocks([self.chartdock], [280], core.Qt.Vertical)
+
     def _restore_window_state(self):
         raw = options.configuration.get("window_state")
         if not isinstance(raw, str) or not raw:
-            return
+            return False
         try:
-            self.restoreState(core.QByteArray.fromBase64(raw.encode("ascii")))
+            return bool(self.restoreState(core.QByteArray.fromBase64(raw.encode("ascii"))))
         except Exception:
-            pass  # broken value: keep the default layout
+            return False  # broken value: keep the default layout
 
     def _save_window_state(self):
+        if self._skip_layout_save:
+            return
         try:
             options.configuration["window_state"] = bytes(self.saveState().toBase64()).decode("ascii")
             options.configuration["charts_window_s"] = self.chartpanel.window_s()

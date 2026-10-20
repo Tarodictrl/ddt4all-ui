@@ -41,11 +41,6 @@ class ChartPanel(widgets.QWidget):
         self._refresh_ms = 100
         self._window_s = DEFAULT_WINDOW_S
 
-        title = widgets.QLabel(_("Charts"))
-        title_font = title.font()
-        title_font.setBold(True)
-        title.setFont(title_font)
-
         self.pause_button = widgets.QPushButton(_("Pause"))
         self.pause_button.setCheckable(True)
         self.pause_button.setProperty("primary", True)
@@ -69,8 +64,6 @@ class ChartPanel(widgets.QWidget):
         toolbar_layout = widgets.QHBoxLayout(toolbar)
         toolbar_layout.setContentsMargins(8, 6, 8, 6)
         toolbar_layout.setSpacing(6)
-        toolbar_layout.addWidget(title)
-        toolbar_layout.addSpacing(8)
         toolbar_layout.addWidget(self.pause_button)
         toolbar_layout.addWidget(self.window_combo)
         toolbar_layout.addWidget(self.csv_button)
