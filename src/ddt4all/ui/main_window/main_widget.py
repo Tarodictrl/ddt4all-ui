@@ -42,6 +42,7 @@ from ddt4all.ui.main_window.utils import (
 )
 from ddt4all.ui.parameters.param_widget import ParamWidget
 from ddt4all.ui.sniffer.sniffer import Sniffer
+from ddt4all.ui.theme import theme
 import ddt4all.version as version
 
 _ = options.translator('ddt4all')
@@ -122,20 +123,22 @@ class MainWidget(widgets.QMainWindow):
         self.setStatusBar(self.statusbar_widget)
 
         self.connectedstatus = widgets.QLabel()
+        self.connectedstatus.setObjectName("connectionPill")
         self.connectedstatus.setAlignment(core.Qt.AlignHCenter | core.Qt.AlignVCenter)
         self.protocolstatus = widgets.QLabel()
         self.progressstatus = widgets.QProgressBar()
         self.infostatus = widgets.QLabel()
 
         # Remove fixed widths to allow widgets to size properly
-        self.connectedstatus.setMinimumWidth(120)
         self.connectedstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
         
         self.protocolstatus.setMinimumWidth(180)
         self.protocolstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
         
         self.progressstatus.setMinimumWidth(200)
-        self.progressstatus.setMaximumHeight(20)
+        self.progressstatus.setFixedHeight(8)
+        self.progressstatus.setTextVisible(False)
+        self.progressstatus.setVisible(False)
         self.progressstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
         
         self.infostatus.setMinimumWidth(200)
@@ -161,14 +164,15 @@ class MainWidget(widgets.QMainWindow):
         cantimeoutlabel = widgets.QLabel(_("Can timeout (ms) [0:AUTO] :"))
         cantimeoutlabel.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
 
+        # Left: connection pill, protocol, messages. Right: settings and scan progress.
         self.statusbar_widget.addWidget(self.connectedstatus)
         self.statusbar_widget.addWidget(self.protocolstatus)
-        self.statusbar_widget.addWidget(self.progressstatus)
-        self.statusbar_widget.addWidget(refrestimelabel)
-        self.statusbar_widget.addWidget(self.refreshtimebox)
-        self.statusbar_widget.addWidget(cantimeoutlabel)
-        self.statusbar_widget.addWidget(self.cantimeout)
-        self.statusbar_widget.addWidget(self.infostatus)
+        self.statusbar_widget.addWidget(self.infostatus, 1)
+        self.statusbar_widget.addPermanentWidget(refrestimelabel)
+        self.statusbar_widget.addPermanentWidget(self.refreshtimebox)
+        self.statusbar_widget.addPermanentWidget(cantimeoutlabel)
+        self.statusbar_widget.addPermanentWidget(self.cantimeout)
+        self.statusbar_widget.addPermanentWidget(self.progressstatus)
 
         self.tabbedview = widgets.QTabWidget()
         self.setCentralWidget(self.tabbedview)
@@ -854,6 +858,7 @@ class MainWidget(widgets.QMainWindow):
             self.scan()
             return
         self.ecu_scan.clear()
+        self.progressstatus.setVisible(True)
         self.logview.append(_("Scanning CAN") + " -> " + project)
         self.ecu_scan.scan(self.progressstatus, self.infostatus, project)
         self.logview.append(_("Scanning KWP") + " -> " + project)
@@ -866,18 +871,19 @@ class MainWidget(widgets.QMainWindow):
             self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
             item = widgets.QListWidgetItem(ecu)
             if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
-                item.setForeground(core.Qt.yellow)
+                item.setForeground(gui.QBrush(theme.color("warn")))
             else:
-                item.setForeground(core.Qt.green)
+                item.setForeground(gui.QBrush(theme.color("ok")))
             self.treeview_ecu.addItem(item)
 
         for ecu in self.ecu_scan.approximate_ecus.keys():
             self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
             item = widgets.QListWidgetItem(ecu)
-            item.setForeground(core.Qt.blue)
+            item.setForeground(gui.QBrush(theme.color("accent")))
             self.treeview_ecu.addItem(item)
 
         self.progressstatus.setValue(0)
+        self.progressstatus.setVisible(False)
         
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
@@ -925,6 +931,7 @@ class MainWidget(widgets.QMainWindow):
         progressWidget.setLayout(progressLayout)
         self.progressstatus.setRange(0, self.ecu_scan.getNumAddr())
         self.progressstatus.setValue(0)
+        self.progressstatus.setVisible(True)
 
         self.ecu_scan.clear()
         if scancan:
@@ -944,33 +951,38 @@ class MainWidget(widgets.QMainWindow):
             self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
             item = widgets.QListWidgetItem(ecu)
             if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
-                item.setForeground(core.Qt.yellow)
+                item.setForeground(gui.QBrush(theme.color("warn")))
             else:
-                item.setForeground(core.Qt.green)
+                item.setForeground(gui.QBrush(theme.color("ok")))
             self.treeview_ecu.addItem(item)
 
         for ecu in self.ecu_scan.approximate_ecus.keys():
             self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
             item = widgets.QListWidgetItem(ecu)
-            item.setForeground(core.Qt.blue)
+            item.setForeground(gui.QBrush(theme.color("accent")))
             self.treeview_ecu.addItem(item)
 
         self.progressstatus.setValue(0)
+        self.progressstatus.setVisible(False)
         
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
 
+    def _set_connection_state(self, state, text):
+        self.connectedstatus.setProperty("state", state)
+        self.connectedstatus.setText(text)
+        style = self.connectedstatus.style()
+        style.unpolish(self.connectedstatus)
+        style.polish(self.connectedstatus)
+
     def setConnected(self, on):
         if options.simulation_mode:
-            self.connectedstatus.setStyleSheet("background-color : orange; color: black")
-            self.connectedstatus.setText(_("EDITION MODE"))
+            self._set_connection_state("warn", _("EDITION MODE"))
             return
         if on:
-            self.connectedstatus.setStyleSheet("background-color : green; color: black")
-            self.connectedstatus.setText(_("CONNECTED"))
+            self._set_connection_state("ok", "● " + _("CONNECTED"))
         else:
-            self.connectedstatus.setStyleSheet("background-color : red; color: black")
-            self.connectedstatus.setText(_("DISCONNECTED"))
+            self._set_connection_state("error", "● " + _("DISCONNECTED"))
 
     def saveEcus(self):
         filename_tuple = widgets.QFileDialog.getSaveFileName(self, _("Save vehicule (keep '.ecu' extension)"),
