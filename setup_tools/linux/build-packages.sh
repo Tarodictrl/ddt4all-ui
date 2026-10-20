@@ -2,7 +2,7 @@
 # Build DDT4ALL .deb and .rpm packages (PyInstaller onedir + fpm).
 #
 # Usage:   setup_tools/linux/build-packages.sh VERSION
-#   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.abc1234
+#   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.42.abc1234
 #
 # Can be run from any directory. Installs nothing: every tool below must already
 # be on PATH, otherwise the script stops early with a clear message.
@@ -25,9 +25,10 @@
 # Package version mapping. "-" is reserved in deb/rpm version fields, and a plain
 # "3.1.3-dev.x" would sort AFTER the final "3.1.3", so:
 #   the first "-" becomes "~" (pre-release, sorts before 3.1.3), further "-" become ".":
-#     3.1.3                 -> 3.1.3
-#     3.1.3-dev.abc1234     -> 3.1.3~dev.abc1234
-#     3.1.3-rc.1            -> 3.1.3~rc.1
+#     3.1.3                    -> 3.1.3
+#     3.1.3-dev.42.abc1234     -> 3.1.3~dev.42.abc1234  (CI: dev.<run number>.<short sha>;
+#                                                        the run number orders dev builds)
+#     3.1.3-rc.1               -> 3.1.3~rc.1
 #   fpm appends release/iteration "1" (deb 3.1.3-1, rpm 3.1.3-1).
 #   Package name: ddt4all.
 #
@@ -41,7 +42,7 @@ set -euo pipefail
 die() { echo "error: $*" >&2; exit 1; }
 
 if [ "$#" -ne 1 ] || [ -z "$1" ]; then
-    echo "usage: $0 VERSION   (e.g. 3.1.3 or 3.1.3-dev.abc1234, no leading 'v')" >&2
+    echo "usage: $0 VERSION   (e.g. 3.1.3 or 3.1.3-dev.42.abc1234, no leading 'v')" >&2
     exit 2
 fi
 VERSION="$1"
@@ -111,6 +112,7 @@ Exec=ddt4all
 Icon=ddt4all
 Categories=Development;Electronics;
 Terminal=false
+StartupWMClass=DDT4ALL
 DESKTOP
 chmod 644 "$STAGE/usr/share/applications/ddt4all.desktop"
 
@@ -182,13 +184,17 @@ echo "==> fpm: $DEB"
 fpm "${fpm_common[@]}" -t deb -p "$DEB" \
     --deb-user root --deb-group root \
     -d libxcb-xinerama0 -d libxkbcommon-x11-0 -d libgl1 \
+    -d libxcb-icccm4 -d libxcb-image0 -d libxcb-keysyms1 -d libxcb-render-util0 \
+    -d libxcb-randr0 -d libxcb-shape0 -d libxcb-xfixes0 -d libxcb-xkb1 \
     -d libglib2.0-0 -d libfontconfig1 -d libdbus-1-3 \
     .
 
 echo "==> fpm: $RPM"
 fpm "${fpm_common[@]}" -t rpm -p "$RPM" \
     --rpm-user root --rpm-group root \
+    --rpm-rpmbuild-define "_build_id_links none" \
     -d libxkbcommon-x11 -d mesa-libGL -d glib2 -d fontconfig -d dbus-libs \
+    -d xcb-util-wm -d xcb-util-image -d xcb-util-keysyms -d xcb-util-renderutil \
     .
 
 [ -s "$DEB" ] || die "deb was not created: $DEB"

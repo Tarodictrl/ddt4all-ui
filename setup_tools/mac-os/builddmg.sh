@@ -2,7 +2,7 @@
 # Build DDT4ALL.app (PyInstaller) and package it into a .dmg with hdiutil.
 #
 # Usage:   setup_tools/mac-os/builddmg.sh VERSION
-#   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.abc1234
+#   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.42.abc1234
 #             (the Info.plist bundle version is trimmed to dotted integers by the spec)
 #
 # Can be run from any directory. Installs nothing: python3 (or $PYTHON) with the
@@ -19,7 +19,7 @@
 #                        before the dmg is created. Unset = whatever signature
 #                        PyInstaller applied (ad-hoc on Apple Silicon).
 #
-# Output, in $DDT4ALL_OUT_DIR (<arch> = `uname -m`, arm64 on a macos-14 runner):
+# Output, in $DDT4ALL_OUT_DIR (<arch> = `uname -m`, arm64 on a macos-15 runner):
 #   DDT4ALL-<VERSION>-macos-<arch>.dmg
 #   The volume holds DDT4ALL.app and an "Applications" symlink for drag-and-drop.
 set -euo pipefail
@@ -28,7 +28,7 @@ die() { echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
 if [ "$#" -ne 1 ] || [ -z "$1" ]; then
-    echo "usage: $0 VERSION   (e.g. 3.1.3 or 3.1.3-dev.abc1234, no leading 'v')" >&2
+    echo "usage: $0 VERSION   (e.g. 3.1.3 or 3.1.3-dev.42.abc1234, no leading 'v')" >&2
     exit 2
 fi
 VERSION="$1"
@@ -71,6 +71,9 @@ DDT4ALL_VERSION="$VERSION" "$PYTHON" -m PyInstaller --noconfirm --clean \
 APP="$PYI_DIST/DDT4ALL.app"
 [ -d "$APP" ] || die "PyInstaller did not produce $APP"
 info "App size: $(du -sh "$APP" | cut -f1)"
+# Non-fatal: PyInstaller ad-hoc signs the bundle; report it if the signature is not intact.
+codesign --verify --deep --strict "$APP" \
+    || echo "warning: codesign --verify reported a problem for $APP (continuing)" >&2
 
 # --- 2. optional code signing ----------------------------------------------
 if [ -n "${CODESIGN_IDENTITY:-}" ]; then
@@ -88,8 +91,20 @@ ditto "$APP" "$STAGE/DDT4ALL.app"
 ln -s /Applications "$STAGE/Applications"
 
 rm -f "$DMG"
+# hdiutil create sometimes fails with "Resource busy" on GitHub macOS runners: retry.
 info "hdiutil create: $DMG"
-hdiutil create -volname "DDT4ALL" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+attempt=1
+max_attempts=5
+until hdiutil create -volname "DDT4ALL" -srcfolder "$STAGE" -ov -format UDZO "$DMG"; do
+    if [ "$attempt" -ge "$max_attempts" ]; then
+        die "hdiutil create failed after $max_attempts attempts"
+    fi
+    delay=$((attempt * 5))
+    echo "warning: hdiutil create failed (attempt $attempt/$max_attempts); retrying in ${delay}s" >&2
+    sleep "$delay"
+    rm -f "$DMG"
+    attempt=$((attempt + 1))
+done
 [ -s "$DMG" ] || die "dmg was not created: $DMG"
 
 if hdiutil verify "$DMG" >/dev/null 2>&1; then

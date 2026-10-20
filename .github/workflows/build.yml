@@ -22,32 +22,76 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Compute version
         id: version
         env:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF_NAME#v}"
-          else
-            # parse src/ddt4all/version.py without importing the package
-            cat > "${RUNNER_TEMP}/read_version.py" <<'PY'
+          # Read the version from the three places that define it, without importing the package.
+          cat > "${RUNNER_TEMP}/read_version.py" <<'PY'
           import ast
           import pathlib
+          import re
+          import sys
 
-          tree = ast.parse(pathlib.Path("src/ddt4all/version.py").read_text(encoding="utf-8"))
-          for node in tree.body:
-              if isinstance(node, ast.Assign) and any(
-                  isinstance(t, ast.Name) and t.id == "__version__" for t in node.targets
-              ):
-                  print(ast.literal_eval(node.value))
-                  break
+          SOURCES = {
+              "version.py": "src/ddt4all/version.py",
+              "pyproject": "pyproject.toml",
+              "version.h": "setup_tools/inno-win-setup/version.h",
+          }
+
+
+          def read(which):
+              text = pathlib.Path(SOURCES[which]).read_text(encoding="utf-8-sig")
+              if which == "version.py":
+                  for node in ast.parse(text).body:
+                      if isinstance(node, ast.Assign) and any(
+                          isinstance(t, ast.Name) and t.id == "__version__" for t in node.targets
+                      ):
+                          return str(ast.literal_eval(node.value))
+                  return None
+              if which == "pyproject":
+                  # the version key of the [project] table
+                  table = re.search(r"^\[project\]\s*$(.*?)(?=^\[|\Z)", text, re.M | re.S)
+                  match = re.search(r'^version\s*=\s*"([^"]+)"', table.group(1) if table else "", re.M)
+                  return match.group(1) if match else None
+              match = re.search(r'^\s*#define\s+__version__\s+"([^"]+)"', text, re.M)
+              return match.group(1) if match else None
+
+
+          value = read(sys.argv[1])
+          if not value:
+              sys.exit("error: could not find the version in " + SOURCES[sys.argv[1]])
+          print(value)
           PY
-            BASE="$(python3 "${RUNNER_TEMP}/read_version.py")"
-            VERSION="${BASE}-dev.${COMMIT_SHA:0:7}"
+          PY_VERSION="$(python3 "${RUNNER_TEMP}/read_version.py" version.py)"
+          TOML_VERSION="$(python3 "${RUNNER_TEMP}/read_version.py" pyproject)"
+          ISS_VERSION="$(python3 "${RUNNER_TEMP}/read_version.py" version.h)"
+          echo "src/ddt4all/version.py __version__ : ${PY_VERSION}"
+          echo "pyproject.toml [project] version   : ${TOML_VERSION}"
+          echo "inno-win-setup/version.h __version__: ${ISS_VERSION}"
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            echo "Tag ${GITHUB_REF_NAME} -> release version ${VERSION}"
+            BAD=0
+            for pair in \
+              "src/ddt4all/version.py:${PY_VERSION}" \
+              "pyproject.toml:${TOML_VERSION}" \
+              "setup_tools/inno-win-setup/version.h:${ISS_VERSION}"; do
+              if [ "${pair#*:}" != "${VERSION}" ]; then
+                echo "::error::Tag ${GITHUB_REF_NAME} does not match ${pair%%:*}, which says '${pair#*:}'. Bump the version there (or retag) and try again."
+                BAD=1
+              fi
+            done
+            if [ "${BAD}" -ne 0 ]; then exit 1; fi
+          else
+            # <version>-dev.<run number>.<short sha>: the run number keeps dev builds ordered
+            VERSION="${PY_VERSION}-dev.${RUN_NUMBER}.${COMMIT_SHA:0:7}"
           fi
           echo "Version: ${VERSION}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
@@ -75,10 +119,10 @@ jobs:
             inno: "5.6.1"
             iss: wininstaller-py3.8.6-inno-5-32-bits.iss
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Python ${{ matrix.python }} ${{ matrix.python-arch }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.python-arch }}
@@ -126,7 +170,7 @@ jobs:
           Get-Item $target | Select-Object Name, Length
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-installer-${{ matrix.arch }}
           path: dist-packages/*.exe
@@ -140,10 +184,10 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           architecture: x64
@@ -155,13 +199,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[can,network]"
-          python -m pip install pyinstaller
+          python -m pip install pyinstaller==6.22.3
 
       - name: Build portable zip
         shell: pwsh
         run: ./setup_tools/windows/build-portable.ps1 $env:VERSION
 
-      - name: Smoke test
+      - name: Smoke test (unzip and start)
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -173,8 +217,19 @@ jobs:
           if (-not (Test-Path $exe)) { throw "DDT4ALL.exe not found in $($zip.Name)" }
           Write-Host "OK: $exe"
 
+          # Start the app headless with a temporary DDT4ALL_HOME; it must still be running after 20 s.
+          $home_dir = Join-Path $env:RUNNER_TEMP "ddt4all-home"
+          New-Item -ItemType Directory -Force -Path $home_dir | Out-Null
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $env:DDT4ALL_HOME = $home_dir
+          $proc = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 20
+          if ($proc.HasExited) { throw "DDT4ALL.exe exited early with code $($proc.ExitCode)" }
+          Stop-Process -Id $proc.Id -Force
+          Write-Host "OK: DDT4ALL.exe was still running after 20 s"
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-portable
           path: dist-packages/*.zip
@@ -188,10 +243,10 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
@@ -223,7 +278,7 @@ jobs:
           ls -lh dist-packages
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-appimage
           path: dist-packages/*.AppImage
@@ -237,10 +292,10 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -251,14 +306,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             ruby ruby-dev rpm build-essential \
-            libxcb-xinerama0 libgl1 libbluetooth-dev
-          sudo gem install --no-document fpm
+            libgl1 libbluetooth-dev \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
+            libxcb-randr0 libxcb-shape0 libxcb-xfixes0 libxcb-xkb1 \
+            libxcb-xinerama0 libxkbcommon-x11-0
+          sudo gem install --no-document fpm -v 1.16.0
 
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[can,network]"
-          python -m pip install pyinstaller
+          python -m pip install pyinstaller==6.22.3
 
       - name: Build deb and rpm
         run: bash setup_tools/linux/build-packages.sh "${VERSION}"
@@ -271,8 +329,17 @@ jobs:
           test -e /opt/ddt4all/DDT4ALL
           dpkg -L ddt4all | grep -E 'ddt4all\.desktop$'
 
+      # exit 124 from timeout = the app was still running after 20 s = success
+      - name: Smoke test (start the installed app)
+        run: |
+          set +e
+          DDT4ALL_HOME="$(mktemp -d)" QT_QPA_PLATFORM=offscreen timeout 20 /opt/ddt4all/DDT4ALL
+          rc=$?
+          [ "$rc" -eq 124 ] || { echo "smoke failed rc=$rc"; exit 1; }
+          echo "OK: the app was still running after 20 s"
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-packages
           path: |
@@ -284,14 +351,14 @@ jobs:
   macos-dmg:
     name: macOS dmg
     needs: version
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -301,13 +368,29 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[can,network]"
-          python -m pip install pyinstaller
+          python -m pip install pyinstaller==6.22.3
 
       - name: Build dmg
         run: bash setup_tools/mac-os/builddmg.sh "${VERSION}"
 
+      - name: Smoke test (start the app)
+        run: |
+          set -euo pipefail
+          APP="build/macos-dmg/pyinstaller/dist/DDT4ALL.app"
+          test -x "${APP}/Contents/MacOS/DDT4ALL"
+          DDT4ALL_HOME="$(mktemp -d)" QT_QPA_PLATFORM=offscreen "${APP}/Contents/MacOS/DDT4ALL" &
+          PID=$!
+          sleep 20
+          if ! kill -0 "${PID}" 2>/dev/null; then
+            echo "smoke failed: the app exited within 20 s"
+            exit 1
+          fi
+          kill "${PID}"
+          wait "${PID}" || true
+          echo "OK: the app was still running after 20 s"
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-dmg
           path: dist-packages/*.dmg
@@ -328,7 +411,7 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-files
           merge-multiple: true
@@ -337,7 +420,9 @@ jobs:
         run: ls -lh release-files
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
           files: release-files/*
