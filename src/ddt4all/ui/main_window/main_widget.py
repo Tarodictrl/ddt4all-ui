@@ -43,6 +43,7 @@ from ddt4all.ui.main_window.utils import (
 from ddt4all.ui.parameters.param_widget import ParamWidget
 from ddt4all.ui.sniffer.sniffer import Sniffer
 from ddt4all.ui.theme import theme
+from ddt4all.ui.charts.chart_panel import ChartPanel, DEFAULT_WINDOW_S, MAX_SERIES
 import ddt4all.version as version
 
 _ = options.translator('ddt4all')
@@ -201,6 +202,7 @@ class MainWidget(widgets.QMainWindow):
         screen_widget = widgets.QWidget()
         self.treedock_widget = widgets.QDockWidget(self)
         self.treedock_widget.setWindowTitle(_("Screen Window"))
+        self.treedock_widget.setObjectName("screensDock")
         self.treedock_widget.setWidget(screen_widget)
         self.treeview_params = widgets.QTreeWidget()
         self.treeview_params.setSortingEnabled(True)
@@ -214,12 +216,14 @@ class MainWidget(widgets.QMainWindow):
 
         self.treedock_logs = widgets.QDockWidget(self)
         self.treedock_logs.setWindowTitle(_("Logs Window"))
+        self.treedock_logs.setObjectName("logsDock")
         self.logview = widgets.QTextEdit()
         self.logview.setReadOnly(True)
         self.treedock_logs.setWidget(self.logview)
 
         self.treedock_ecu = widgets.QDockWidget(self)
         self.treedock_ecu.setWindowTitle(_("Ecu Window"))
+        self.treedock_ecu.setObjectName("ecuDock")
         self.treeview_ecu = widgets.QListWidget(self.treedock_ecu)
         self.treedock_ecu.setWidget(self.treeview_ecu)
         self.treeview_ecu.clicked.connect(self.changeECU)
@@ -229,14 +233,30 @@ class MainWidget(widgets.QMainWindow):
         self.eculistwidget = EcuList(self.ecu_scan, self.treeview_ecu, self.vehicles)
         self.treeview_eculist = widgets.QDockWidget(self)
         self.treeview_eculist.setWindowTitle(_("Ecu List Window"))
+        self.treeview_eculist.setObjectName("ecuListDock")
         self.treeview_eculist.setWidget(self.eculistwidget)
+
+        self.chartpanel = ChartPanel(self)
+        self.chartpanel.set_refresh_ms(options.refreshrate)
+        self.chartpanel.set_window_s(options.configuration.get("charts_window_s", DEFAULT_WINDOW_S))
+        self.chartpanel.series_added.connect(lambda key: self._set_chart_marker(key, True))
+        self.chartpanel.series_removed.connect(lambda key: self._set_chart_marker(key, False))
+        self.chartpanel.limit_reached.connect(self._on_chart_limit)
+        self.chartdock = widgets.QDockWidget(self)
+        self.chartdock.setObjectName("chartsDock")
+        self.chartdock.setWindowTitle(_("Charts"))
+        self.chartdock.setWidget(self.chartpanel)
 
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treeview_eculist)
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treedock_ecu)
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treedock_widget)
+        self.addDockWidget(core.Qt.BottomDockWidgetArea, self.chartdock)
         self.addDockWidget(core.Qt.BottomDockWidgetArea, self.treedock_logs)
+        self.resizeDocks([self.chartdock, self.treedock_logs], [900, 320], core.Qt.Horizontal)
+        self.resizeDocks([self.chartdock], [280], core.Qt.Vertical)
 
         self.toolbar = self.addToolBar(_("ToolBar"))
+        self.toolbar.setObjectName("mainToolbar")
         self.toolbar.setContextMenuPolicy(core.Qt.PreventContextMenu)
 
         self.diagaction = widgets.QAction(gui.QIcon(ICON_DTC), _("Read DTC"), self)
@@ -315,6 +335,11 @@ class MainWidget(widgets.QMainWindow):
         self.toolbar.addWidget(self.zoominbutton)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.zoomoutbutton)
+        self.toolbar.addSeparator()
+        charts_button = widgets.QToolButton()
+        charts_button.setToolButtonStyle(core.Qt.ToolButtonTextOnly)
+        charts_button.setDefaultAction(self.chartdock.toggleViewAction())
+        self.toolbar.addWidget(charts_button)
 
         if options.simulation_mode:
             self.ui_edit_button = widgets.QPushButton(_("UI Edit"))
@@ -401,6 +426,7 @@ class MainWidget(widgets.QMainWindow):
         show_menu.addAction(self.treedock_logs.toggleViewAction())
         show_menu.addAction(self.treedock_ecu.toggleViewAction())
         show_menu.addAction(self.treeview_eculist.toggleViewAction())
+        show_menu.addAction(self.chartdock.toggleViewAction())
 
         view_menu.addSeparator()
 
@@ -477,6 +503,7 @@ class MainWidget(widgets.QMainWindow):
         about_content = help_menu.addAction(_("About"))
         about_content.triggered.connect(self.about_content_msg)
 
+        self._restore_window_state()
         self.setConnected(True)
         self.tabbedview.setCurrentIndex(1)
         self.showMaximized()
@@ -538,6 +565,7 @@ class MainWidget(widgets.QMainWindow):
         self.autorefresh.setChecked(False)
         self.refresh.setEnabled(True)
 
+        self.chartpanel.clear_all()
         if self.paramview:
             try:
                 self.paramview.tester_timer.stop()
@@ -832,6 +860,7 @@ class MainWidget(widgets.QMainWindow):
 
     def changeRefreshTime(self):
         options.refreshrate = self.refreshtimebox.value()
+        self.chartpanel.set_refresh_ms(options.refreshrate)
 
     def changeCanTimeout(self):
         options.cantimeout = self.cantimeout.value()
@@ -974,6 +1003,36 @@ class MainWidget(widgets.QMainWindow):
         style = self.connectedstatus.style()
         style.unpolish(self.connectedstatus)
         style.polish(self.connectedstatus)
+
+    # ---- live charts ----
+    def _set_chart_marker(self, key, on):
+        if self.paramview is None:
+            return
+        try:
+            self.paramview.set_chart_marker(key, on)
+        except RuntimeError:
+            pass  # parameter view already destroyed
+
+    def _on_chart_limit(self):
+        self.statusbar_widget.showMessage(
+            _("Chart limit reached: max %d parameters") % MAX_SERIES, 4000)
+
+    def _restore_window_state(self):
+        raw = options.configuration.get("window_state")
+        if not isinstance(raw, str) or not raw:
+            return
+        try:
+            self.restoreState(core.QByteArray.fromBase64(raw.encode("ascii")))
+        except Exception:
+            pass  # broken value: keep the default layout
+
+    def _save_window_state(self):
+        try:
+            options.configuration["window_state"] = bytes(self.saveState().toBase64()).decode("ascii")
+            options.configuration["charts_window_s"] = self.chartpanel.window_s()
+            options.save_config()
+        except Exception as error:
+            print(_("Cannot save window layout: %s") % error)
 
     def setConnected(self, on):
         if options.simulation_mode:
@@ -1147,6 +1206,7 @@ class MainWidget(widgets.QMainWindow):
         self.set_can_combo(self.paramview.ecurequestsparser.ecu_protocol)
 
     def closeEvent(self, event):
+        self._save_window_state()
         if self.paramview:
             self.paramview.tester_timer.stop()
         self.snifferview.stopthread()
@@ -1216,6 +1276,7 @@ class MainWidget(widgets.QMainWindow):
 
         uiscale_mem = 12
 
+        self.chartpanel.clear_all()
         if self.paramview:
             uiscale_mem = self.paramview.uiscale
             self.paramview.setParent(None)
@@ -1225,6 +1286,7 @@ class MainWidget(widgets.QMainWindow):
         self.paramview = ParamWidget(self.scrollview, ecu_file, ecu_addr, ecu_name, self.logview,
                                                 self.protocolstatus, self.canlinecombo.currentIndex())
         self.paramview.infobox = self.infostatus
+        self.paramview.attach_chart_sink(self.chartpanel)
         if options.simulation_mode:
             self.requesteditor.set_ecu(self.paramview.ecurequestsparser)
             self.dataitemeditor.set_ecu(self.paramview.ecurequestsparser)

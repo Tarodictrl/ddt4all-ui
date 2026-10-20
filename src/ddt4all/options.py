@@ -99,7 +99,9 @@ configuration = {
     "doip_preset": "Custom",
     "doip_scan": False,
     "last_selected_vehicle": None,
-    "last_opened_ecu": None
+    "last_opened_ecu": None,
+    "window_state": None,
+    "charts_window_s": 60
 }
 
 
@@ -130,6 +132,8 @@ def create_new_config():
     configuration["doip_scan"] = False
     configuration["last_selected_vehicle"] = None
     configuration["last_opened_ecu"] = None
+    configuration["window_state"] = None
+    configuration["charts_window_s"] = 60
     save_config()
 
 
@@ -174,6 +178,9 @@ def load_configuration():
         # Load last selected vehicle and ECU
         configuration["last_selected_vehicle"] = config.get("last_selected_vehicle", None)
         configuration["last_opened_ecu"] = config.get("last_opened_ecu", None)
+        # Window layout and charts panel
+        configuration["window_state"] = config.get("window_state", None)
+        configuration["charts_window_s"] = config.get("charts_window_s", 60)
         
         os.environ['LANG'] = str(configuration["lang"])
         f.close()
