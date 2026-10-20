@@ -82,7 +82,7 @@ Notes:
 - **Linux**: add your user to the `dialout` group for serial adapters (see [Platform notes](#platform-notes)).
 - **Test builds:** every pull request and every push to `master` builds all packages
   as CI artifacts, kept for 14 days: GitHub → **Actions** → *Build packages* → pick a run →
-  **Artifacts**. Their version looks like `3.1.3-dev.<commit>`.
+  **Artifacts**. Their version looks like `3.1.3-dev.<run number>.<commit>`.
 
 ---
 
@@ -102,18 +102,26 @@ DDT4ALL does **not** ship the ECU database. It looks for `ecu.zip` (or an extrac
 
 The PyInstaller builds (portable zip, `.deb`, `.rpm`, `.dmg`) start through a small launcher
 ([`launcher.py`](setup_tools/pyinstaller/launcher.py)) that switches to the folder above before the
-app starts; the AppImage's `AppRun` does the same for its data folder. Set `DDT4ALL_HOME` to use another folder:
+app starts; the AppImage's `AppRun` does the same for its data folder. That folder is self-contained:
+besides the ECU database it holds `config.json`, `json/` and `logs/` (the launcher and `AppRun` create
+`json/` so the very first run already keeps its config there). Set `DDT4ALL_HOME` to use another folder:
 
 ```bash
-DDT4ALL_HOME=/data/ddt4all ddt4all             # Linux / macOS
+DDT4ALL_HOME=/data/ddt4all ddt4all                                               # Linux (.deb / .rpm)
+DDT4ALL_HOME=/data/ddt4all /Applications/DDT4ALL.app/Contents/MacOS/DDT4ALL      # macOS
 ```
 ```powershell
 $env:DDT4ALL_HOME = "D:\ddt4all"; .\DDT4ALL.exe   # Windows portable
 ```
 
 `DDT4ALL_HOME` is read by that launcher and by the AppImage's `AppRun`; the Windows installer runs
-`python -m ddt4all` directly and ignores it. The normal builds have no console window; for
+`python -m ddt4all` directly and ignores it. On macOS an app started from Finder, the Dock or
+Launchpad does not see shell environment variables, so `DDT4ALL_HOME` only works when you start the
+binary from a terminal as shown above. The normal builds have no console window; for
 troubleshooting build with `DDT4ALL_CONSOLE=1` (see [Building packages locally](#building-packages-locally)).
+
+**AppImage users:** if you kept `ecu.zip` (or `ecus/`) next to the AppImage file, move it to
+`~/.local/share/ddt4all/` (or the folder `DDT4ALL_HOME` points to); the AppImage no longer looks next to itself.
 
 ---
 
@@ -358,11 +366,11 @@ workflow runs them on Linux, Windows and macOS for every pull request and every 
 
 ## Building packages locally
 
-All scripts take the version **without** a leading `v` (`3.1.3`, or `3.1.3-dev.abc1234`)
+All scripts take the version **without** a leading `v` (`3.1.3`, or `3.1.3-dev.42.abc1234`)
 and write to `dist-packages/` (git-ignored); scratch files go to `build/`.
 Optional environment variables: `PYTHON` (interpreter), `DDT4ALL_BUILD_DIR`, `DDT4ALL_OUT_DIR`.
 The scripts install nothing: install the project and PyInstaller first
-(`pip install -e ".[can,network]" pyinstaller`). All PyInstaller builds share
+(`pip install -e ".[can,network]" pyinstaller==6.22.3`, the version CI uses). All PyInstaller builds share
 [`setup_tools/pyinstaller/ddt4all.spec`](setup_tools/pyinstaller/ddt4all.spec); set
 `DDT4ALL_CONSOLE=1` before building to get a build that prints to a console.
 

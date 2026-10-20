@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Usage:   powershell -NoProfile -ExecutionPolicy Bypass -File setup_tools/windows/build-portable.ps1 VERSION
-      VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.abc1234
+      VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.42.abc1234
 
     Can be run from any directory. Installs nothing: "python" (or $env:PYTHON) with
     the project dependencies and PyInstaller must already be on PATH, otherwise the
@@ -19,8 +19,9 @@
     Output, in DDT4ALL_OUT_DIR:
       DDT4ALL-<VERSION>-windows-x64-portable.zip
       containing one top-level folder DDT4ALL\ with DDT4ALL.exe (plus _internal\).
-      The app stores ecu.zip / ecus\ / config.json next to DDT4ALL.exe, so the
-      unzipped folder must live somewhere writable.
+      The app stores ecu.zip / ecus\ / config.json / json\ / logs\ next to DDT4ALL.exe
+      (the launcher creates json\ on first run), so the unzipped folder must live
+      somewhere writable.
 #>
 param(
     [Parameter(Mandatory = $true, Position = 0)]

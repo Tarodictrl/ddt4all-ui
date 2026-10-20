@@ -10,6 +10,11 @@ folder:
   because the install location (``/opt``, a mounted AppImage, an ``.app``
   bundle) is read-only.
 
+A ``json/`` folder is created in the chosen folder: DDT4ALL treats the working
+directory as self-contained (``config.json``, ``json/``, ``logs/`` next to the
+ECU database) as soon as ``json/`` exists there, so the very first run already
+writes its config to this folder and later runs find it again.
+
 ``DDT4ALL_HOME`` overrides the choice (handy for tests and power users).
 When not frozen (``python launcher.py``) the working directory is untouched.
 """
@@ -36,10 +41,15 @@ def resolve_workdir(platform=None, executable=None, environ=None):
 
 
 def enter_workdir():
-    """Create (if needed) and chdir into the frozen build's working folder."""
+    """Create (if needed) and chdir into the frozen build's working folder.
+
+    Also creates ``json/`` there so ``ddt4all.file_manager`` keeps config, json
+    and logs in this folder from the first run on (instead of platformdirs).
+    """
     workdir = resolve_workdir()
     workdir.mkdir(parents=True, exist_ok=True)
     os.chdir(str(workdir))
+    (workdir / "json").mkdir(exist_ok=True)
     return workdir
 
 

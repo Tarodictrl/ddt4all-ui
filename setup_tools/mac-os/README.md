@@ -14,7 +14,7 @@ using only the tools that ship with macOS (`hdiutil`, `ditto`). No `create-dmg` 
 - macOS with Xcode Command Line Tools (`xcode-select --install`)
 - Python 3.8+ with the project dependencies and PyInstaller already installed:
   ```bash
-  pip install . pyinstaller
+  pip install -e ".[can,network]" pyinstaller==6.22.3
   ```
   The script installs nothing and stops early if PyInstaller or `hdiutil` is missing.
 
@@ -43,7 +43,7 @@ runs on, not universal. The volume contains `DDT4ALL.app` and an `Applications`
 symlink for drag-and-drop installation.
 
 The Info.plist version is taken from `VERSION` (trimmed to dotted integers, so
-`3.1.3-dev.abc1234` becomes `3.1.3`).
+`3.1.3-dev.42.abc1234` becomes `3.1.3`).
 
 ## Where the ECU database goes
 

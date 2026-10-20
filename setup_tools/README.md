@@ -115,7 +115,7 @@ bash setup_tools/mac-os/builddmg.sh 3.1.3
 ```
 See `mac-os/README.md` for details (the old `main.spec` and `create-dmg` are no longer used).
 
-### 5. Output
+### 3. Output
 - **DMG**: `dist-packages/DDT4ALL-<version>-macos-<arch>.dmg`
 - **Architecture**: native to the build machine (CI builds Apple Silicon)
 
