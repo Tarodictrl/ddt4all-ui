@@ -55,3 +55,9 @@ ddt4all-*.AppImage
 
 # Brainstorming companion mockups
 .superpowers/
+
+# PyInstaller spec is source (some global gitignores ignore *.spec)
+!/setup_tools/pyinstaller/*.spec
+
+# Packaging output (setup_tools/*/build-*, builddmg.sh)
+/dist-packages/

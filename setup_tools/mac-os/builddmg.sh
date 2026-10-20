@@ -1,154 +1,117 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Build DDT4ALL.app (PyInstaller) and package it into a .dmg with hdiutil.
+#
+# Usage:   setup_tools/mac-os/builddmg.sh VERSION
+#   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.42.abc1234
+#             (the Info.plist bundle version is trimmed to dotted integers by the spec)
+#
+# Can be run from any directory. Installs nothing: python3 (or $PYTHON) with the
+# project dependencies and PyInstaller, plus the macOS tools hdiutil and ditto,
+# must already be available, otherwise the script stops early.
+#
+# Environment variables (all optional):
+#   PYTHON               Python interpreter to use                 (default: python3)
+#   DDT4ALL_BUILD_DIR    scratch root; this script uses <dir>/macos-dmg
+#                        and wipes only that sub-folder             (default: <repo>/build)
+#   DDT4ALL_OUT_DIR      where the dmg is written                   (default: <repo>/dist-packages)
+#   CODESIGN_IDENTITY    if set, DDT4ALL.app is re-signed with this identity
+#                        (codesign --deep, hardened runtime, entitlements.plist)
+#                        before the dmg is created. Unset = whatever signature
+#                        PyInstaller applied (ad-hoc on Apple Silicon).
+#
+# Output, in $DDT4ALL_OUT_DIR (<arch> = `uname -m`, arm64 on a macos-15 runner):
+#   DDT4ALL-<VERSION>-macos-<arch>.dmg
+#   The volume holds DDT4ALL.app and an "Applications" symlink for drag-and-drop.
+set -euo pipefail
 
-# DDT4ALL macOS DMG Build Script
-# Creates a distributable DMG file for macOS
+die() { echo "error: $*" >&2; exit 1; }
+info() { echo "==> $*"; }
 
-set -e  # Exit on any error
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Function to print colored output
-print_status() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Check dependencies
-print_status "Checking dependencies..."
-
-if ! command -v pyinstaller &> /dev/null; then
-    print_error "PyInstaller not found. Please install it with: pip install pyinstaller"
-    exit 1
+if [ "$#" -ne 1 ] || [ -z "$1" ]; then
+    echo "usage: $0 VERSION   (e.g. 3.1.3 or 3.1.3-dev.42.abc1234, no leading 'v')" >&2
+    exit 2
 fi
+VERSION="$1"
+case "$VERSION" in
+    [vV]*) die "VERSION must not start with 'v' (got '$VERSION')" ;;
+esac
 
-if ! command -v create-dmg &> /dev/null; then
-    print_error "create-dmg not found. Please install it with: brew install create-dmg"
-    exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PYTHON="${PYTHON:-python3}"
+BUILD_ROOT="${DDT4ALL_BUILD_DIR:-$ROOT/build}"
+OUT_DIR="${DDT4ALL_OUT_DIR:-$ROOT/dist-packages}"
+SPEC="$ROOT/setup_tools/pyinstaller/ddt4all.spec"
+ENTITLEMENTS="$SCRIPT_DIR/entitlements.plist"
+ARCH="$(uname -m)"
+DMG="$OUT_DIR/DDT4ALL-$VERSION-macos-$ARCH.dmg"
 
-# Verify we're in the correct directory
-if [ ! -f "main.spec" ]; then
-    print_error "main.spec not found. Please run this script from the setup_tools/mac-os directory."
-    exit 1
-fi
+# --- tool checks ------------------------------------------------------------
+[ "$(uname -s)" = "Darwin" ] || die "this script must run on macOS"
+command -v "$PYTHON" >/dev/null 2>&1 || die "'$PYTHON' not found on PATH"
+"$PYTHON" -m PyInstaller --version >/dev/null 2>&1 \
+    || die "PyInstaller is not installed for '$PYTHON' (pip install pyinstaller)"
+command -v hdiutil >/dev/null 2>&1 || die "hdiutil not found (macOS only)"
+command -v ditto >/dev/null 2>&1 || die "ditto not found (macOS only)"
+[ -f "$SPEC" ] || die "missing $SPEC"
+[ -f "$ROOT/resources/icons/obd.icns" ] || die "missing $ROOT/resources/icons/obd.icns"
 
-# Verify icon files exist
-if [ ! -f "../../resources/icons/obd.icns" ]; then
-    print_error "Icon file ../../resources/icons/obd.icns not found."
-    exit 1
-fi
+WORK="$BUILD_ROOT/macos-dmg"
+PYI_DIST="$WORK/pyinstaller/dist"
+PYI_WORK="$WORK/pyinstaller/work"
+STAGE="$WORK/stage"
 
-if [ ! -f "../../license.txt" ]; then
-    print_error "License file ../../license.txt not found."
-    exit 1
-fi
+rm -rf "$WORK"
+mkdir -p "$PYI_DIST" "$PYI_WORK" "$STAGE" "$OUT_DIR"
 
-# Clean previous builds
-print_status "Cleaning previous builds..."
-rm -rf build/ dist/ *.spec.bak
+# --- 1. PyInstaller ---------------------------------------------------------
+info "PyInstaller (version $VERSION)"
+DDT4ALL_VERSION="$VERSION" "$PYTHON" -m PyInstaller --noconfirm --clean \
+    --distpath "$PYI_DIST" --workpath "$PYI_WORK" "$SPEC"
+APP="$PYI_DIST/DDT4ALL.app"
+[ -d "$APP" ] || die "PyInstaller did not produce $APP"
+info "App size: $(du -sh "$APP" | cut -f1)"
+# Non-fatal: PyInstaller ad-hoc signs the bundle; report it if the signature is not intact.
+codesign --verify --deep --strict "$APP" \
+    || echo "warning: codesign --verify reported a problem for $APP (continuing)" >&2
 
-# Build the application
-print_status "Building DDT4ALL.app with PyInstaller..."
-pyinstaller --noconfirm main.spec
-
-# Verify the build was successful
-if [ ! -d "dist/DDT4ALL.app" ]; then
-    print_error "PyInstaller build failed. DDT4ALL.app not found in dist/"
-    exit 1
-fi
-
-print_status "Build successful. App size: $(du -sh dist/DDT4ALL.app | cut -f1)"
-
-# Create DMG preparation directory
-print_status "Preparing DMG creation..."
-mkdir -p dist/dmg
-
-# Clean the dmg folder (only if it exists and has contents)
-if [ -d "dist/dmg" ] && [ "$(ls -A dist/dmg)" ]; then
-    rm -rf dist/dmg/*
-fi
-
-# Copy the app bundle to the dmg folder
-cp -r "dist/DDT4ALL.app" dist/dmg/
-
-# Remove any existing DMG
-if [ -f "dist/DDT4ALL.dmg" ]; then
-    print_warning "Removing existing DDT4ALL.dmg"
-    rm "dist/DDT4ALL.dmg"
-fi
-
-# Create the DMG
-print_status "Creating DMG..."
-create-dmg \
-  --volname "DDT4ALL" \
-  --volicon "../../resources/icons/obd.icns" \
-  --window-pos 200 120 \
-  --window-size 600 300 \
-  --icon-size 100 \
-  --no-internet-enable \
-  --icon "DDT4ALL.app" 175 120 \
-  --hide-extension "DDT4ALL.app" \
-  --eula "../../license.txt" \
-  --app-drop-link 425 120 \
-  --hdiutil-verbose \
-  "dist/DDT4ALL.dmg" \
-  "dist/dmg/"
-
-# Verify DMG creation
-if [ -f "dist/DDT4ALL.dmg" ]; then
-    dmg_size=$(du -sh dist/DDT4ALL.dmg | cut -f1)
-    print_status "DMG created successfully: dist/DDT4ALL.dmg (${dmg_size})"
-    
-    # Optional: Verify DMG can be mounted
-    print_status "Verifying DMG integrity..."
-    if hdiutil verify "dist/DDT4ALL.dmg" > /dev/null 2>&1; then
-        print_status "DMG verification passed"
-    else
-        print_warning "DMG verification failed, but file was created"
-    fi
-    
-    print_status "Build complete! You can find the installer at: $(pwd)/dist/DDT4ALL.dmg"
+# --- 2. optional code signing ----------------------------------------------
+if [ -n "${CODESIGN_IDENTITY:-}" ]; then
+    info "Signing with identity: $CODESIGN_IDENTITY"
+    codesign --force --deep --options runtime --timestamp \
+        --entitlements "$ENTITLEMENTS" --sign "$CODESIGN_IDENTITY" "$APP"
+    codesign --verify --deep --strict --verbose=2 "$APP"
 else
-    print_error "DMG creation failed"
-    exit 1
+    echo "note: CODESIGN_IDENTITY is not set; the app is not re-signed (ad-hoc signature only)" >&2
 fi
 
-# Optional: Code signing information
-if [ -n "$CODESIGN_IDENTITY" ]; then
-    print_status "Code signing with identity: $CODESIGN_IDENTITY"
-    codesign --force --verify --verbose --sign "$CODESIGN_IDENTITY" "dist/DDT4ALL.app"
-    
-    # Verify code signature
-    if codesign --verify --verbose "dist/DDT4ALL.app"; then
-        print_status "Code signing successful"
-    else
-        print_error "Code signing failed"
-        exit 1
+# --- 3. stage and build the dmg --------------------------------------------
+info "Staging dmg contents"
+ditto "$APP" "$STAGE/DDT4ALL.app"
+ln -s /Applications "$STAGE/Applications"
+
+rm -f "$DMG"
+# hdiutil create sometimes fails with "Resource busy" on GitHub macOS runners: retry.
+info "hdiutil create: $DMG"
+attempt=1
+max_attempts=5
+until hdiutil create -volname "DDT4ALL" -srcfolder "$STAGE" -ov -format UDZO "$DMG"; do
+    if [ "$attempt" -ge "$max_attempts" ]; then
+        die "hdiutil create failed after $max_attempts attempts"
     fi
-    
-    # Optional: Notarization (requires Apple Developer account)
-    if [ -n "$NOTARIZE_USERNAME" ] && [ -n "$NOTARIZE_PASSWORD" ]; then
-        print_status "Submitting for notarization..."
-        xcrun notarytool submit "dist/DDT4ALL.dmg" \
-            --apple-id "$NOTARIZE_USERNAME" \
-            --password "$NOTARIZE_PASSWORD" \
-            --team-id "$TEAM_ID" \
-            --wait
-    fi
+    delay=$((attempt * 5))
+    echo "warning: hdiutil create failed (attempt $attempt/$max_attempts); retrying in ${delay}s" >&2
+    sleep "$delay"
+    rm -f "$DMG"
+    attempt=$((attempt + 1))
+done
+[ -s "$DMG" ] || die "dmg was not created: $DMG"
+
+if hdiutil verify "$DMG" >/dev/null 2>&1; then
+    info "dmg verification passed"
 else
-    print_warning "No code signing identity set. Set CODESIGN_IDENTITY environment variable for signed builds."
-    print_warning "Example: export CODESIGN_IDENTITY='Developer ID Application: Your Name (XXXXXXXXXX)'"
+    echo "warning: hdiutil verify reported a problem for $DMG" >&2
 fi
 
-print_status "All done! 🎉"
+ls -l "$OUT_DIR"
+echo "Done: $DMG"

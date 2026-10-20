@@ -6,9 +6,13 @@ This directory contains comprehensive build and packaging tools for creating dis
 
 DDT4All uses modern Python packaging with `pyproject.toml` and provides automated build scripts for creating platform-specific installers:
 
-- **Windows**: InnoSetup-based installer with embedded Python runtime
-- **macOS**: PyInstaller-based DMG with universal binary support
-- **Linux**: Native package support (development mode)
+- **Windows**: InnoSetup-based installer with embedded Python runtime, plus a PyInstaller portable zip (`windows/build-portable.ps1`)
+- **macOS**: PyInstaller-based DMG (`mac-os/builddmg.sh`)
+- **Linux**: `.deb` / `.rpm` (`linux/build-packages.sh`) and AppImage (`appimage/build.sh`)
+
+Releases are built by CI (`.github/workflows/build.yml`); see the "Building packages locally"
+and "Releasing" sections of the main README for the exact commands and output names.
+All PyInstaller builds share `pyinstaller/ddt4all.spec`.
 
 ## Prerequisites
 
@@ -27,7 +31,6 @@ DDT4All uses modern Python packaging with `pyproject.toml` and provides automate
 #### macOS
 - **Xcode Command Line Tools**: `xcode-select --install`
 - **PyInstaller**: `pip install pyinstaller`
-- **create-dmg** (optional, for enhanced DMG creation): `brew install create-dmg`
 
 #### Linux
 - **Build essentials**: `sudo apt-get install build-essential`
@@ -105,52 +108,18 @@ pip install -e ".[dev]"
 pip install pyinstaller
 ```
 
-### 2. Update Build Configuration
-Edit `setup_tools/mac-os/main.spec` if needed:
-- Update paths for new project structure
-- Modify hidden imports for additional dependencies
-- Adjust data files for new resource locations
-
-### 3. Build Application
+### 2. Build Application
 ```bash
-# Navigate to setup tools directory
-cd setup_tools/mac-os
-
-# Build using PyInstaller
-pyinstaller main.spec
-
-# Or use the build script
-chmod +x builddmg.sh
-./builddmg.sh
+# From the repository root; VERSION has no leading "v"
+bash setup_tools/mac-os/builddmg.sh 3.1.3
 ```
+See `mac-os/README.md` for details (the old `main.spec` and `create-dmg` are no longer used).
 
-### 4. Create DMG (Optional Enhanced)
-```bash
-# Install create-dmg if not already installed
-brew install create-dmg
-
-# Create enhanced DMG with background and proper layout
-create-dmg \
-  --volname "DDT4ALL" \
-  --volicon "DDT4ALL.app/Contents/Resources/icon.icns" \
-  --window-pos 200 120 \
-  --window-size 600 300 \
-  --icon-size 100 \
-  --icon "DDT4ALL.app" 175 120 \
-  --hide-extension "DDT4ALL.app" \
-  --app-drop-link 425 120 \
-  "DDT4ALL.dmg" \
-  "dist/"
-```
-
-### 5. Output
-- **Application**: `DDT4ALL.app` (in `dist/` directory)
-- **DMG**: `DDT4ALL.dmg` (if using create-dmg)
-- **Architecture**: Universal binary (Intel + Apple Silicon)
-- **Size**: ~80-120MB
+### 3. Output
+- **DMG**: `dist-packages/DDT4ALL-<version>-macos-<arch>.dmg`
+- **Architecture**: native to the build machine (CI builds Apple Silicon)
 
 ### macOS Build Features
-- **Universal binary** support for Intel and Apple Silicon
 - **Code signing** support (with appropriate certificates)
 - **Notarization** ready (entitlements.plist included)
 - **Standalone application** with embedded dependencies
@@ -187,13 +156,10 @@ EOF
 
 ### Package Building (Advanced)
 ```bash
-# Install packaging tools
-sudo apt-get install python3-stdeb dh-python
+# Needs PyInstaller, fpm (gem install fpm) and rpmbuild (apt-get install rpm)
+bash setup_tools/linux/build-packages.sh 3.1.3
 
-# Create Debian package
-python setup.py --command-packages=stdeb bdist_deb
-
-# Output in deb_dist/
+# Output in dist-packages/: DDT4ALL-3.1.3-linux-x86_64.deb and .rpm
 ```
 
 ## Version Management
@@ -251,7 +217,6 @@ The build systems automatically sync version information from:
 - **Editable install fails**: Upgrade tooling, then retry:
   `python3 -m pip install --upgrade pip setuptools wheel`
 - **Code signing errors**: Ensure proper certificates installed
-- **Universal binary issues**: Build on both architectures or use universal tools
 - **Notarization failures**: Check entitlements and signing identity
 - **`resources/projects.json not found or invalid` at startup**:
   Reinstall from repository root so package data is present:

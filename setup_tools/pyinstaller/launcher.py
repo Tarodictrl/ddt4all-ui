@@ -1,0 +1,66 @@
+"""Entry point of the frozen (PyInstaller) DDT4ALL build.
+
+DDT4ALL looks for its ECU database (``ecu.zip``, ``ecus/``) in the *current
+working directory*, so a frozen build must start in a sensible, writable
+folder:
+
+* Windows (portable zip): the folder that holds ``DDT4ALL.exe``.
+* Linux / macOS (``.deb``, ``.rpm``, AppImage, ``.dmg``): the per-user data
+  folder (``platformdirs.user_data_dir("ddt4all")``), created on first run,
+  because the install location (``/opt``, a mounted AppImage, an ``.app``
+  bundle) is read-only.
+
+A ``json/`` folder is created in the chosen folder: DDT4ALL treats the working
+directory as self-contained (``config.json``, ``json/``, ``logs/`` next to the
+ECU database) as soon as ``json/`` exists there, so the very first run already
+writes its config to this folder and later runs find it again.
+
+``DDT4ALL_HOME`` overrides the choice (handy for tests and power users).
+When not frozen (``python launcher.py``) the working directory is untouched.
+"""
+import os
+import sys
+from pathlib import Path
+
+
+def resolve_workdir(platform=None, executable=None, environ=None):
+    """Return the working directory a frozen build must start in."""
+    platform = sys.platform if platform is None else platform
+    executable = sys.executable if executable is None else executable
+    environ = os.environ if environ is None else environ
+
+    override = environ.get("DDT4ALL_HOME")
+    if override:
+        return Path(override).expanduser()
+    if platform.startswith("win"):
+        return Path(executable).resolve().parent
+
+    from platformdirs import PlatformDirs
+
+    return Path(PlatformDirs("ddt4all").user_data_dir)
+
+
+def enter_workdir():
+    """Create (if needed) and chdir into the frozen build's working folder.
+
+    Also creates ``json/`` there so ``ddt4all.file_manager`` keeps config, json
+    and logs in this folder from the first run on (instead of platformdirs).
+    """
+    workdir = resolve_workdir()
+    workdir.mkdir(parents=True, exist_ok=True)
+    os.chdir(str(workdir))
+    (workdir / "json").mkdir(exist_ok=True)
+    return workdir
+
+
+def run():
+    if getattr(sys, "frozen", False):
+        enter_workdir()
+
+    from ddt4all.main import main
+
+    sys.exit(main())
+
+
+if __name__ == "__main__":
+    run()
