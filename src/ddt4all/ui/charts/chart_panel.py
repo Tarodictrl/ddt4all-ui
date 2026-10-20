@@ -40,6 +40,10 @@ class ChartPanel(widgets.QWidget):
         self._paused_edge: Optional[float] = None
         self._refresh_ms = 100
         self._window_s = DEFAULT_WINDOW_S
+        self._dirty = True
+        self._painted_edge: Optional[float] = None
+        self._push_failed: Set[str] = set()
+        self._tick_failed = False
 
         self.pause_button = widgets.QPushButton(_("Pause"))
         self.pause_button.setCheckable(True)
@@ -136,14 +140,17 @@ class ChartPanel(widgets.QWidget):
             series = self._series.get(key)
             if series is not None:
                 series.append(t, parse_value(value_str))
+                self._dirty = True
         except Exception:
-            log.exception("Chart push failed for %s", key)
+            if key not in self._push_failed:
+                self._push_failed.add(key)
+                log.exception("Chart push failed for %s", key)
 
     def set_polled_keys(self, keys: Iterable[str]) -> None:
         self._polled = set(keys)
         for key, series in self._series.items():
             series.polled = key in self._polled
-        self.lane_view.update()
+        self._repaint()
 
     def set_refresh_ms(self, ms: int) -> None:
         self._refresh_ms = max(1, int(ms))
@@ -166,7 +173,7 @@ class ChartPanel(widgets.QWidget):
     def clear_data(self) -> None:
         for series in self._series.values():
             series.clear()
-        self.lane_view.update()
+        self._repaint()
         self._update_controls()
 
     def clear_all(self) -> None:
@@ -196,9 +203,16 @@ class ChartPanel(widgets.QWidget):
     def _right_edge(self) -> float:
         return self._paused_edge if self._paused_edge is not None else self._clock()
 
+    def _repaint(self) -> None:
+        """Schedule a repaint now and remember which time edge it shows."""
+        self._dirty = False
+        self._painted_edge = self.lane_view.right_edge
+        self.lane_view.update()
+
     def _sync_view(self) -> None:
         self.lane_view.set_series(self._series.values())
         self.lane_view.right_edge = self._right_edge()
+        self._repaint()
         self.stack.setCurrentIndex(1 if self._series else 0)
         self._update_controls()
 
@@ -216,11 +230,18 @@ class ChartPanel(widgets.QWidget):
     def _on_tick(self) -> None:
         try:
             if self._series and self._paused_edge is None:
-                self.lane_view.right_edge = self._clock()
-                self.lane_view.update()
+                now = self._clock()
+                self.lane_view.right_edge = now
+                # Repaint for new samples, or once the time axis has moved by a pixel.
+                pixel_s = self._window_s / max(1.0, self.lane_view._plot_rect().width())
+                if (self._dirty or self._painted_edge is None
+                        or now - self._painted_edge >= pixel_s):
+                    self._repaint()
             self._update_controls()
         except Exception:
-            log.exception("Chart tick failed")
+            if not self._tick_failed:
+                self._tick_failed = True
+                log.exception("Chart tick failed")
 
     def _on_pause_toggled(self, paused: bool) -> None:
         if paused:
@@ -231,7 +252,7 @@ class ChartPanel(widgets.QWidget):
             self.pause_button.setText(_("Pause"))
         self.lane_view.wheel_scrolls_time = paused
         self.lane_view.right_edge = self._right_edge()
-        self.lane_view.update()
+        self._repaint()
         self._update_controls()
 
     def _on_window_changed(self, index: int) -> None:
@@ -239,7 +260,7 @@ class ChartPanel(widgets.QWidget):
         if seconds:
             self._window_s = int(seconds)
             self.lane_view.window_s = float(seconds)
-            self.lane_view.update()
+            self._repaint()
 
     def _on_scroll(self, delta: int) -> None:
         if self._paused_edge is None or delta == 0:
@@ -253,5 +274,5 @@ class ChartPanel(widgets.QWidget):
         earliest = min(min(firsts) + self._window_s, now)
         self._paused_edge = max(earliest, min(edge, now))
         self.lane_view.right_edge = self._paused_edge
-        self.lane_view.update()
+        self._repaint()
         self._update_controls()

@@ -75,6 +75,14 @@ class Series:
         stop = min(bisect.bisect_right(self._t, t1) + 1, len(self._t))
         return list(zip(self._t[start:stop], self._v[start:stop]))
 
+    def visible_columns(self, t0: float, t1: float) -> Tuple[List[float], List[Optional[float]]]:
+        """Same samples as visible(), but as parallel (times, values) lists without per-point work."""
+        if not self._t:
+            return [], []
+        start = max(bisect.bisect_left(self._t, t0) - 1, 0)
+        stop = min(bisect.bisect_right(self._t, t1) + 1, len(self._t))
+        return self._t[start:stop], self._v[start:stop]
+
     def value_at(self, t: float) -> Optional[Point]:
         """Nearest sample to time t."""
         if not self._t:

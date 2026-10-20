@@ -1,7 +1,10 @@
 """QPainter widget drawing one lane per parameter with a shared time axis."""
 from __future__ import annotations
 
+import array
 import logging
+import operator
+from bisect import bisect_left, bisect_right
 from typing import Iterable, List, Optional, Sequence, Tuple
 
 import PyQt5.QtCore as core
@@ -34,12 +37,15 @@ def format_value(v: Optional[float]) -> str:
     return "0" if text in ("", "-0") else text
 
 
-def gap_threshold(points: Sequence[Point], refresh_ms: int) -> float:
-    """Break the line when samples are further apart than ~3 real polling periods."""
-    times = [t for t, _v in points[-51:]]
+def _gap_from_times(times: Sequence[float], refresh_ms: int) -> float:
     diffs = sorted(b - a for a, b in zip(times, times[1:]) if b > a)
     median = diffs[len(diffs) // 2] if diffs else 0.0
     return max(3.0 * median, 3.0 * refresh_ms / 1000.0, 0.5)
+
+
+def gap_threshold(points: Sequence[Point], refresh_ms: int) -> float:
+    """Break the line when samples are further apart than ~3 real polling periods."""
+    return _gap_from_times([t for t, _v in points[-51:]], refresh_ms)
 
 
 def split_runs(points: Sequence[Point], gap: float) -> List[List[Tuple[float, float]]]:
@@ -83,6 +89,87 @@ def decimate(xy: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
     return out
 
 
+def decimate_run(ts: Sequence[float], vs: Sequence[float], t0: float, t1: float,
+                 columns: int) -> Tuple[Sequence[float], Sequence[float]]:
+    """Reduce one continuous run to min/max per pixel column, working on times.
+
+    ``columns`` is the plot width in pixels. Runs that already have no more points
+    than that are returned unchanged. Points outside [t0, t1] (the neighbours that
+    let the line reach the edges) are kept as they are. Reduced points carry the
+    time of their column centre, so they map back to pixels like any other sample.
+    Returns the new (times, values) pair.
+    """
+    low_i = bisect_left(ts, t0)
+    high_i = bisect_right(ts, t1)
+    columns = max(1, int(columns))
+    if high_i - low_i <= columns or t1 <= t0:
+        return ts, vs
+    out_t = list(ts[:low_i])
+    out_v = list(vs[:low_i])
+    add_t, add_v = out_t.append, out_v.append
+    step = (t1 - t0) / columns
+    start = low_i
+    last = columns - 1
+    for c in range(columns):
+        stop = high_i if c == last else bisect_left(ts, t0 + (c + 1) * step, start, high_i)
+        if stop <= start:
+            continue
+        tc = t0 + (c + 0.5) * step
+        if stop - start == 1:
+            add_t(tc)
+            add_v(vs[start])
+        else:
+            chunk = vs[start:stop]
+            low = min(chunk)
+            high = max(chunk)
+            add_t(tc)
+            if low == high:
+                add_v(low)
+            else:
+                add_t(tc)
+                if chunk[0] > chunk[-1]:  # falling inside the column: keep the stroke direction
+                    add_v(high)
+                    add_v(low)
+                else:
+                    add_v(low)
+                    add_v(high)
+        start = stop
+    out_t.extend(ts[high_i:])
+    out_v.extend(vs[high_i:])
+    return out_t, out_v
+
+
+def _runs(ts: Sequence[float], vs: Sequence[Optional[float]],
+          refresh_ms: int) -> List[Tuple[Sequence[float], Sequence[float]]]:
+    """Continuous runs as (times, values) pairs; the common gap-free case avoids per-point Python."""
+    if not ts:
+        return []
+    gap = _gap_from_times(ts[-51:], refresh_ms)
+    if None not in vs and (len(ts) < 2 or max(map(operator.sub, ts[1:], ts)) <= gap):
+        return [(ts, vs)]
+    runs = []
+    for run in split_runs(list(zip(ts, vs)), gap):
+        rt, rv = zip(*run)
+        runs.append((rt, rv))
+    return runs
+
+
+def _polygon(xs: Sequence[float], ys: Sequence[float]) -> gui.QPolygonF:
+    """Build a QPolygonF from coordinate lists; fills the buffer directly when PyQt allows it."""
+    n = len(xs)
+    try:
+        poly = gui.QPolygonF(n)
+        raw = poly.data()
+        raw.setsize(n * 16)  # QPointF is two doubles
+        coords = array.array("d", bytes(n * 16))
+        coords[0::2] = array.array("d", xs)
+        coords[1::2] = array.array("d", ys)
+        memoryview(raw).cast("B").cast("d")[:] = coords
+        return poly
+    except (AttributeError, TypeError, ValueError, BufferError):
+        return gui.QPolygonF(list(map(core.QPointF, xs, ys)))
+
+
 class LaneView(widgets.QWidget):
     remove_requested = core.pyqtSignal(str)
     scroll_requested = core.pyqtSignal(int)
@@ -95,6 +182,7 @@ class LaneView(widgets.QWidget):
         self.refresh_ms = 100
         self.wheel_scrolls_time = False
         self._hover: Optional[core.QPoint] = None
+        self._paint_failed = False
         self.setMouseTracking(True)
         self.setMinimumHeight(LANE_MIN_H + AXIS_H)
 
@@ -137,7 +225,9 @@ class LaneView(widgets.QWidget):
         try:
             self._paint(painter)
         except Exception:
-            log.exception("Chart paint failed")
+            if not self._paint_failed:
+                self._paint_failed = True
+                log.exception("Chart paint failed")
         finally:
             painter.end()
 
@@ -211,24 +301,25 @@ class LaneView(widgets.QWidget):
             p.drawText(area, core.Qt.AlignCenter, _("no numeric data"))
             return
 
-        points = series.visible(t0, t1)
-        values = [v for _t, v in points if v is not None]
-        if not values:
+        runs = _runs(*series.visible_columns(t0, t1), self.refresh_ms)
+        if not runs:
             return
-        vmin, vmax = min(values), max(values)
+        data_min = min(min(vs) for _ts, vs in runs)
+        data_max = max(max(vs) for _ts, vs in runs)
+        vmin, vmax = data_min, data_max
         if vmax == vmin:
             vmin, vmax = vmin - 1.0, vmax + 1.0
         else:
             margin = (vmax - vmin) * 0.1
             vmin, vmax = vmin - margin, vmax + margin
 
-        # Min / max labels and a middle grid line
+        # Min / max labels (real data extremes) and a middle grid line
         p.setPen(theme.color("text_muted"))
         label_w = Y_LABEL_W - 6
         p.drawText(core.QRectF(LEFT_W, area.top() - 2, label_w, small_fm.height()),
-                   core.Qt.AlignRight | core.Qt.AlignTop, format_value(vmax))
+                   core.Qt.AlignRight | core.Qt.AlignTop, format_value(data_max))
         p.drawText(core.QRectF(LEFT_W, area.bottom() - small_fm.height() + 2, label_w, small_fm.height()),
-                   core.Qt.AlignRight | core.Qt.AlignBottom, format_value(vmin))
+                   core.Qt.AlignRight | core.Qt.AlignBottom, format_value(data_min))
         p.setPen(gui.QPen(theme.color("border"), 1))
         mid = area.center().y()
         p.drawLine(core.QPointF(area.left(), mid), core.QPointF(area.right(), mid))
@@ -236,24 +327,23 @@ class LaneView(widgets.QWidget):
         span_t = max(t1 - t0, 1e-6)
         span_v = vmax - vmin
 
-        def to_xy(t, v):
-            x = area.left() + (t - t0) / span_t * area.width()
-            y = area.bottom() - (v - vmin) / span_v * area.height()
-            return x, y
-
+        left, width, bottom, height = area.left(), area.width(), area.bottom(), area.height()
+        kx = width / span_t
+        ky = height / span_v
         p.save()
         p.setClipRect(area.adjusted(0, -2, 0, 2))
-        pen = gui.QPen(color, 1.8)
-        pen.setJoinStyle(core.Qt.RoundJoin)
+        pen = gui.QPen(color, 1.0)
+        pen.setCosmetic(True)
         p.setPen(pen)
-        for run in split_runs(points, gap_threshold(points, self.refresh_ms)):
-            xy = [to_xy(t, v) for t, v in run]
-            if len(xy) > 2 * area.width():
-                xy = decimate(xy)
-            if len(xy) == 1:
-                p.drawEllipse(core.QPointF(*xy[0]), 1.5, 1.5)
+        columns = int(width)
+        for ts, vs in runs:
+            ts, vs = decimate_run(ts, vs, t0, t1, columns)
+            xs = [left + (t - t0) * kx for t in ts]
+            ys = [bottom - (v - vmin) * ky for v in vs]
+            if len(xs) == 1:
+                p.drawEllipse(core.QPointF(xs[0], ys[0]), 1.5, 1.5)
                 continue
-            p.drawPolyline(gui.QPolygonF([core.QPointF(x, y) for x, y in xy]))
+            p.drawPolyline(_polygon(xs, ys))
         p.restore()
 
     def _paint_axis(self, p, plot, small):
