@@ -24,7 +24,7 @@ __contributors__ = {
     "walkman2021": "Translator"
 }
 __license__ = "GPL"
-__version__ = "3.1.3"
+__version__ = "3.2.0"
 __maintainer__ = "Cedric PAILLE"
 __email__ = "cedricpaille@gmail.com"
 __codename__ = "Celestial Nemean"

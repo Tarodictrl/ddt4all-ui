@@ -16,7 +16,7 @@ OBDLink SX/EX and ELS27 adapters.
 > Windows, Linux and macOS built by CI. Diagnostic functionality comes from upstream;
 > the original author and contributors are credited [below](#credits-and-support).
 
-- **Current version:** `v3.1.3` (Celestial Nemean)
+- **Current version:** `v3.2.0` (Celestial Nemean)
 - **License:** [GPL-3.0-or-later](license.txt)
 
 ---
