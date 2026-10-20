@@ -108,8 +108,6 @@ def main(argv=None) -> int:
     except (FileNotFoundError, json.JSONDecodeError, KeyError):
         set_theme_style(app, 0)
 
-    app.setStyle("plastic")
-
     if os.path.exists(options.ecus_dir + '/eculist.xml'):
         print(_("Using custom DDT database"))
 
