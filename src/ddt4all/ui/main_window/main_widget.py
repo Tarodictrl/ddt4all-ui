@@ -58,7 +58,7 @@ except ImportError:
     HAS_WEBENGINE = False
 
 BASE_DIR = Path(__file__).resolve().parent
-plugins_base_dir = BASE_DIR / ".." / ".." / "plugins"
+plugins_base_dir = BASE_DIR.parent.parent / "plugins"
 
 class MainWidget(widgets.QMainWindow):
     def __init__(self, app, vehicles, parent=None):

@@ -43,25 +43,9 @@ def enter_workdir():
     return workdir
 
 
-def fix_plugins_dir():
-    """Point the plugin loader at ``<bundle>/ddt4all/plugins``.
-
-    ``main_widget`` computes ``BASE_DIR / ".." / ".." / "plugins"`` from a
-    module living inside the PYZ archive, so the intermediate directories
-    (``ddt4all/ui/main_window``) do not exist on disk. Windows resolves ``..``
-    lexically and copes, Linux and macOS fail with ENOENT. Use the real folder
-    instead.
-    """
-    import ddt4all
-    import ddt4all.ui.main_window.main_widget as main_widget
-
-    main_widget.plugins_base_dir = Path(ddt4all.__file__).resolve().parent / "plugins"
-
-
 def run():
     if getattr(sys, "frozen", False):
         enter_workdir()
-        fix_plugins_dir()
 
     from ddt4all.main import main
 
