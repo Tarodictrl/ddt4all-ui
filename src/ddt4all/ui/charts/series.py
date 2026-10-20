@@ -92,7 +92,10 @@ class Series:
 def _csv_number(value: Optional[float]) -> str:
     if value is None:
         return ""
-    return format(value, ".6g").replace(".", ",")
+    text = ("%.10f" % value).rstrip("0").rstrip(".")
+    if text in ("", "-0"):
+        text = "0"
+    return text.replace(".", ",")
 
 
 def export_csv(series_list: Sequence[Series], path: str, t_origin: Optional[float] = None) -> None:
