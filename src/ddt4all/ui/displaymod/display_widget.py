@@ -35,6 +35,7 @@ class DisplayWidget(widgets.QWidget):
         self.chart_sink = None
         self._charted = False
         self._chart_marker = None
+        self._chart_marker_themed = False
 
     def toggle_selected(self, sel):
         if sel:
@@ -254,11 +255,25 @@ class DisplayWidget(widgets.QWidget):
         if self.qlabelval is None:
             return
         if self._chart_marker is None:
+            if not self._charted:
+                return
             self._chart_marker = widgets.QFrame(self)
             self._chart_marker.setAttribute(core.Qt.WA_TransparentForMouseEvents)
-        self._chart_marker.setStyleSheet("background-color: %s;" % theme.tokens()["accent"])
+            if not self._chart_marker_themed:
+                self._chart_marker_themed = True
+                theme.notifier().changed.connect(self._recolor_chart_marker)
+        self._recolor_chart_marker()
         self._place_chart_marker()
         self._chart_marker.setVisible(self._charted)
+
+    def _recolor_chart_marker(self):
+        marker = self._chart_marker
+        if marker is None:
+            return
+        try:
+            marker.setStyleSheet("background-color: %s;" % theme.tokens()["accent"])
+        except RuntimeError:
+            pass  # C++ object already deleted together with its parent
 
     def contextMenuEvent(self, event):
         if options.simulation_mode and options.mode_edit:

@@ -344,8 +344,8 @@ class MacroRunnerDialog(gui.QDialog):
         :class:`NaturalItem`. Sorting is therefore done by
         :meth:`sort_tree`, on a header click.
 
-        No alternating row colours: the ddt4all stylesheets
-        (``resources/styles/qstyle*.qss``) have no ``alternate-background-color``
+        No alternating row colours: the Fluent theme stylesheet
+        (``resources/styles/fluent.qss``) has no ``alternate-background-color``
         rule, so the stripes would be painted with the **system** palette
         (near-white) over the dark theme. ddt4all's own ``QTreeWidget``
         (``ui/main_window/ecu_list.py``) does the same.

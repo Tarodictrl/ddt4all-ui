@@ -255,6 +255,9 @@ QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
   width: 8px;
   height: 8px;
 }
+QComboBox {
+  max-width: 370px;
+}
 QComboBox::drop-down {
   border: none;
   width: 22px;
@@ -270,6 +273,16 @@ QComboBox QAbstractItemView {
   selection-background-color: {accent_soft};
   selection-color: {accent};
   outline: none;
+}
+
+/* ---- DDT2000 screens keep their original geometry ----
+   Screen controls are sized by the ECU screen files, so the roomier paddings
+   and minimum heights above must not apply inside them. */
+ScreenWidget QLineEdit, ScreenWidget QComboBox,
+ScreenWidget QSpinBox, ScreenWidget QDoubleSpinBox,
+ScreenWidget QPushButton {
+  min-height: 0px;
+  padding: 0px 2px;
 }
 
 /* ---- Scrollbars ---- */

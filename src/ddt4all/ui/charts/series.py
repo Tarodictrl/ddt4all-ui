@@ -106,6 +106,11 @@ def _csv_number(value: Optional[float]) -> str:
     return text.replace(".", ",")
 
 
+def _csv_header(text: str) -> str:
+    """A header cell must not contain the separator or a line break, or columns shift."""
+    return text.replace(";", " ").replace("\r", " ").replace("\n", " ")
+
+
 def export_csv(series_list: Sequence[Series], path: str, t_origin: Optional[float] = None) -> None:
     """Write all buffered samples in the recorder format: ';' separator, ',' decimals."""
     if t_origin is None:
@@ -114,7 +119,7 @@ def export_csv(series_list: Sequence[Series], path: str, t_origin: Optional[floa
     columns = [dict(s.points()) for s in series_list]
     times = sorted({t for column in columns for t in column})
     header = ["Time (ms)"] + [
-        "%s(%s)" % (s.name, s.unit) if s.unit else s.name for s in series_list
+        _csv_header("%s(%s)" % (s.name, s.unit) if s.unit else s.name) for s in series_list
     ]
     with open(path, "w", encoding="utf-8-sig", newline="") as handle:
         handle.write(";".join(header) + "\n")

@@ -663,11 +663,6 @@ class MainWidget(widgets.QMainWindow):
         except Exception as e:
             print(_("Error updating menu bar: %s") % e)
             
-    def toggle_theme(self):
-        """Toggle theme between light and dark"""
-        new_theme = not options.dark_mode
-        set_theme_style(2 if new_theme else 0)
-        
     def show_options_dialog(self):
         """Show options dialog for device settings"""
         options_dialog = MainWindowOptions(self.app)
@@ -890,31 +885,32 @@ class MainWidget(widgets.QMainWindow):
             return
         self.ecu_scan.clear()
         self.progressstatus.setVisible(True)
-        self.logview.append(_("Scanning CAN") + " -> " + project)
-        self.ecu_scan.scan(self.progressstatus, self.infostatus, project)
-        self.logview.append(_("Scanning KWP") + " -> " + project)
-        self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus, project)
-        if options.configuration.get('doip_scan', True):
-            self.logview.append(_("Scanning DoIP") + " -> " + project)
-            self.ecu_scan.scan_doip(self.progressstatus, self.infostatus, project)
+        try:
+            self.logview.append(_("Scanning CAN") + " -> " + project)
+            self.ecu_scan.scan(self.progressstatus, self.infostatus, project)
+            self.logview.append(_("Scanning KWP") + " -> " + project)
+            self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus, project)
+            if options.configuration.get('doip_scan', True):
+                self.logview.append(_("Scanning DoIP") + " -> " + project)
+                self.ecu_scan.scan_doip(self.progressstatus, self.infostatus, project)
 
-        for ecu in self.ecu_scan.ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
-                item.setForeground(gui.QBrush(theme.color("warn")))
-            else:
-                item.setForeground(gui.QBrush(theme.color("ok")))
-            self.treeview_ecu.addItem(item)
+            for ecu in self.ecu_scan.ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
+                    item.setForeground(gui.QBrush(theme.color("warn")))
+                else:
+                    item.setForeground(gui.QBrush(theme.color("ok")))
+                self.treeview_ecu.addItem(item)
 
-        for ecu in self.ecu_scan.approximate_ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            item.setForeground(gui.QBrush(theme.color("accent")))
-            self.treeview_ecu.addItem(item)
-
-        self.progressstatus.setValue(0)
-        self.progressstatus.setVisible(False)
+            for ecu in self.ecu_scan.approximate_ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                item.setForeground(gui.QBrush(theme.color("accent")))
+                self.treeview_ecu.addItem(item)
+        finally:
+            self.progressstatus.setValue(0)
+            self.progressstatus.setVisible(False)
         
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
@@ -964,37 +960,38 @@ class MainWidget(widgets.QMainWindow):
         self.progressstatus.setValue(0)
         self.progressstatus.setVisible(True)
 
-        self.ecu_scan.clear()
-        if scancan:
-            self.ecu_scan.scan(self.progressstatus, self.infostatus, None, self.canlinecombo.currentIndex())
-        if scankwp:
-            self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus)
-        if scandoip and options.configuration.get('doip_scan', True):
-            self.ecu_scan.scan_doip(self.progressstatus, self.infostatus)
+        try:
+            self.ecu_scan.clear()
+            if scancan:
+                self.ecu_scan.scan(self.progressstatus, self.infostatus, None, self.canlinecombo.currentIndex())
+            if scankwp:
+                self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus)
+            if scandoip and options.configuration.get('doip_scan', True):
+                self.ecu_scan.scan_doip(self.progressstatus, self.infostatus)
 
-        self.treeview_ecu.clear()
-        self.treeview_params.clear()
-        self.ecunamemap = {}
-        if self.paramview:
-            self.paramview.init(None)
+            self.treeview_ecu.clear()
+            self.treeview_params.clear()
+            self.ecunamemap = {}
+            if self.paramview:
+                self.paramview.init(None)
 
-        for ecu in self.ecu_scan.ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
-                item.setForeground(gui.QBrush(theme.color("warn")))
-            else:
-                item.setForeground(gui.QBrush(theme.color("ok")))
-            self.treeview_ecu.addItem(item)
+            for ecu in self.ecu_scan.ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
+                    item.setForeground(gui.QBrush(theme.color("warn")))
+                else:
+                    item.setForeground(gui.QBrush(theme.color("ok")))
+                self.treeview_ecu.addItem(item)
 
-        for ecu in self.ecu_scan.approximate_ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            item.setForeground(gui.QBrush(theme.color("accent")))
-            self.treeview_ecu.addItem(item)
-
-        self.progressstatus.setValue(0)
-        self.progressstatus.setVisible(False)
+            for ecu in self.ecu_scan.approximate_ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                item.setForeground(gui.QBrush(theme.color("accent")))
+                self.treeview_ecu.addItem(item)
+        finally:
+            self.progressstatus.setValue(0)
+            self.progressstatus.setVisible(False)
         
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
@@ -1016,8 +1013,19 @@ class MainWidget(widgets.QMainWindow):
             pass  # parameter view already destroyed
 
     def _on_chart_limit(self):
-        self.statusbar_widget.showMessage(
-            _("Chart limit reached: max %d parameters") % MAX_SERIES, 4000)
+        # Not statusBar().showMessage: that would hide the connection pill for the duration.
+        previous = self.infostatus.text()
+        message = _("Chart limit reached: max %d parameters") % MAX_SERIES
+        self.infostatus.setText(message)
+
+        def restore():
+            try:
+                if self.infostatus.text() == message:
+                    self.infostatus.setText(previous)
+            except RuntimeError:
+                pass  # window already destroyed
+
+        core.QTimer.singleShot(4000, restore)
 
     def _apply_default_dock_sizes(self):
         self.resizeDocks([self.chartdock, self.treedock_logs], [900, 320], core.Qt.Horizontal)
