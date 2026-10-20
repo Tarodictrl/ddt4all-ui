@@ -75,6 +75,7 @@ export PYTHONPATH="\$APPDIR/usr/lib/python${PYTHON_VER}/site-packages"
 export QT_QPA_PLATFORM=xcb
 export QT_PLUGIN_PATH="\$APPDIR/usr/plugins"
 export QTWEBENGINE_CHROMIUM_FLAGS="--disk-cache-dir=\$HOME/.cache/ddt4all"
+DATA_DIR="\${DDT4ALL_HOME:-\${XDG_DATA_HOME:-\$HOME/.local/share}/ddt4all}"; mkdir -p "\$DATA_DIR"; cd "\$DATA_DIR"
 exec "\$APPDIR/usr/bin/python3" -m ddt4all "\$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"

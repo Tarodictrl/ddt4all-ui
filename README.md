@@ -97,12 +97,12 @@ DDT4ALL does **not** ship the ECU database. It looks for `ecu.zip` (or an extrac
 | Windows installer (x64 / x86) | the install folder (default `C:\Program Files\DDT4ALL`); the shortcuts start the app there. **The installer deletes this folder on reinstall, upgrade and uninstall, so keep a copy of `ecu.zip` elsewhere.** |
 | `.deb` / `.rpm` | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
 | macOS `.dmg` | `~/Library/Application Support/ddt4all/` (created on first run) |
-| AppImage | the current directory of the process that starts it: run it from a terminal in the folder holding `ecu.zip` |
+| AppImage | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
 | Run from source | the directory you run `python -m ddt4all` from |
 
 The PyInstaller builds (portable zip, `.deb`, `.rpm`, `.dmg`) start through a small launcher
 ([`launcher.py`](setup_tools/pyinstaller/launcher.py)) that switches to the folder above before the
-app starts. Set `DDT4ALL_HOME` to use another folder:
+app starts; the AppImage's `AppRun` does the same for its data folder. Set `DDT4ALL_HOME` to use another folder:
 
 ```bash
 DDT4ALL_HOME=/data/ddt4all ddt4all             # Linux / macOS
@@ -111,8 +111,8 @@ DDT4ALL_HOME=/data/ddt4all ddt4all             # Linux / macOS
 $env:DDT4ALL_HOME = "D:\ddt4all"; .\DDT4ALL.exe   # Windows portable
 ```
 
-`DDT4ALL_HOME` is read only by that launcher; the AppImage and the Windows installer run
-`python -m ddt4all` directly and ignore it. The normal builds have no console window; for
+`DDT4ALL_HOME` is read by that launcher and by the AppImage's `AppRun`; the Windows installer runs
+`python -m ddt4all` directly and ignores it. The normal builds have no console window; for
 troubleshooting build with `DDT4ALL_CONSOLE=1` (see [Building packages locally](#building-packages-locally)).
 
 ---
