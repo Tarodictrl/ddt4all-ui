@@ -5,6 +5,7 @@ import ddt4all.options as options
 from ddt4all.ui.display_data import DisplayData
 from ddt4all.ui.display_dict import DisplayDict
 from ddt4all.ui.displaymod.style_label import StyleLabel
+from ddt4all.ui.theme import theme
 from ddt4all.ui.utils import (
     colorConvert,
     jsonFont,
@@ -27,6 +28,14 @@ class DisplayWidget(widgets.QWidget):
         self.qlabel = None
         self.qlabelval = None
         self.jsondata = None
+        self.chart_key = ""
+        self.chart_name = ""
+        self.chart_unit = ""
+        self.chart_request = ""
+        self.chart_sink = None
+        self._charted = False
+        self._chart_marker = None
+        self._chart_marker_themed = False
 
     def toggle_selected(self, sel):
         if sel:
@@ -52,6 +61,7 @@ class DisplayWidget(widgets.QWidget):
         self.qlabelval.resize(self.qlabelval.width(), self.height())
         self.qlabelval.move(self.qlabelval.pos().x() + diff, 0)
         self.update_json()
+        self._place_chart_marker()
 
     def move(self, x, y):
         super(DisplayWidget, self).move(int(x), int(y))
@@ -78,6 +88,7 @@ class DisplayWidget(widgets.QWidget):
         self.qlabelval.resize(oldvalsize - x, self.height())
         self.qlabelval.move(valnewx, 0)
         self.update_json()
+        self._place_chart_marker()
 
     def initXML(self, display, displaydict):
         text = display.getAttribute("DataName")
@@ -153,6 +164,7 @@ class DisplayWidget(widgets.QWidget):
 
         dd = displaydict[req_name]
         dd.addData(ddata)
+        self._set_chart_identity(req_name, data)
         self.toggle_selected(False)
 
     def initJson(self, display, displaydict):
@@ -222,4 +234,62 @@ class DisplayWidget(widgets.QWidget):
         dd = displaydict[req_name]
         dd.addData(ddata)
         self.jsondata = display
+        self._set_chart_identity(req_name, data)
         self.toggle_selected(False)
+
+    # ---- live charts ----
+    def _set_chart_identity(self, req_name, data):
+        self.chart_request = req_name
+        self.chart_name = data.name
+        self.chart_unit = data.unit
+        self.chart_key = "%s/%s" % (req_name, data.name)
+
+    def _place_chart_marker(self):
+        if self._chart_marker is None or self.qlabelval is None:
+            return
+        self._chart_marker.setGeometry(self.qlabelval.x(), 0, 3, self.height())
+        self._chart_marker.raise_()
+
+    def set_charted(self, on):
+        self._charted = bool(on)
+        if self.qlabelval is None:
+            return
+        if self._chart_marker is None:
+            if not self._charted:
+                return
+            self._chart_marker = widgets.QFrame(self)
+            self._chart_marker.setAttribute(core.Qt.WA_TransparentForMouseEvents)
+            if not self._chart_marker_themed:
+                self._chart_marker_themed = True
+                theme.notifier().changed.connect(self._recolor_chart_marker)
+        self._recolor_chart_marker()
+        self._place_chart_marker()
+        self._chart_marker.setVisible(self._charted)
+
+    def _recolor_chart_marker(self):
+        marker = self._chart_marker
+        if marker is None:
+            return
+        try:
+            marker.setStyleSheet("background-color: %s;" % theme.tokens()["accent"])
+        except RuntimeError:
+            pass  # C++ object already deleted together with its parent
+
+    def contextMenuEvent(self, event):
+        if options.simulation_mode and options.mode_edit:
+            event.ignore()
+            return
+        if self.chart_sink is None or not self.chart_key:
+            event.ignore()
+            return
+        sink = self.chart_sink
+        key = self.chart_key
+        menu = widgets.QMenu(self)
+        if sink.has_series(key):
+            action = menu.addAction(_("Remove from chart"))
+            action.triggered.connect(lambda: sink.remove_series(key))
+        else:
+            action = menu.addAction(_("Add to chart"))
+            action.triggered.connect(lambda: sink.add_series(key, self.chart_name, self.chart_unit))
+        menu.exec_(event.globalPos())
+        event.accept()

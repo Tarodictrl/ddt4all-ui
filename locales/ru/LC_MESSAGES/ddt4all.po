@@ -15,8 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "X-Generator: Poedit 3.9\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
@@ -212,7 +211,8 @@ msgstr ""
 "ЭБУ DoIP по адресу %(addr)s ответил с минимальными данными: %(response)s"
 
 #, python-format
-msgid "Initializing DoIP connection to %(ip)s:%(port)s (timeout: %(timeout)ss)"
+msgid ""
+"Initializing DoIP connection to %(ip)s:%(port)s (timeout: %(timeout)ss)"
 msgstr ""
 "Инициализация подключения DoIP к %(ip)s:%(port)s (timeout: %(timeout)ss)"
 
@@ -263,7 +263,8 @@ msgstr "Режим симуляции: адрес DoIP %s будет отска�
 
 #, python-format
 msgid "Would connect to DoIP ECU at address %s and read identification data"
-msgstr "Подключился бы к ЭБУ DoIP по адресу %s и прочитал данные идентификации"
+msgstr ""
+"Подключился бы к ЭБУ DoIP по адресу %s и прочитал данные идентификации"
 
 msgid "DoIP connection closed"
 msgstr "Подключение DoIP закрыто"
@@ -654,9 +655,9 @@ msgid "Airbag Tools"
 msgstr "Инструменты Airbag"
 
 msgid ""
-"AB90 (Clio III)/2<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL "
-"UNLOCK AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</"
-"font>"
+"AB90 (Clio III)/2<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL"
+" UNLOCK AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT "
+"MEANS</font>"
 msgstr ""
 "AB90 (Clio III)/2<br>AIRBAG VIRGINIZER<br><font color='red'>ЭТОТ ПЛАГИН "
 "РАЗБЛОКИРУЕТ ДАННЫЕ О СРАЖЕНИИ ПОДУШКИ БЕЗОПАСНОСТИ<br>УХОДИТЕ, ЕСЛИ НЕ "
@@ -706,8 +707,8 @@ msgid ""
 "<font color='red'>MEGANE II CARD PROGRAMMING<br>EXPERIMENTAL : NOT TESTED "
 "YET</font>"
 msgstr ""
-"<font color='red'>ПРОГРАММИРОВАНИЕ КАРТЫ MEGANE II<br>ЭКСПЕРИМЕНТАЛЬНО : ЕЩЕ "
-"НЕ ТЕСТИРОВАНО</font>"
+"<font color='red'>ПРОГРАММИРОВАНИЕ КАРТЫ MEGANE II<br>ЭКСПЕРИМЕНТАЛЬНО : ЕЩЕ"
+" НЕ ТЕСТИРОВАНО</font>"
 
 msgid "LEARN"
 msgstr "ОБУЧЕНИЕ"
@@ -756,7 +757,8 @@ msgid ""
 "EPS IMMO DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 "Modus/Clio III EPS VIRGINIZER<br><font color='red'>ЭТОТ ПЛАГИН СБРОСИТ "
-"ДАННЫЕ IMMO EPS<br>УХОДИТЕ, ЕСЛИ У ВАС НЕТ ПОНИМАНИЯ, ЧТО ЭТО ОЗНАЧАЕТ</font>"
+"ДАННЫЕ IMMO EPS<br>УХОДИТЕ, ЕСЛИ У ВАС НЕТ ПОНИМАНИЯ, ЧТО ЭТО "
+"ОЗНАЧАЕТ</font>"
 
 msgid "BLANK STATUS & VIN READ"
 msgstr "ПУСТОЙ СТАТУС И ЧТЕНИЕ VIN"
@@ -867,8 +869,8 @@ msgid "Megane3 AIRBAG Reset"
 msgstr "Сброс AIRBAG Megane3"
 
 msgid ""
-"Megane III<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK "
-"AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+"Megane III<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK"
+" AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 "Megane III<br>AIRBAG VIRGINIZER<br><font color='red'>ЭТОТ ПЛАГИН "
 "РАЗБЛОКИРУЕТ ДАННЫЕ ОБ АВАРИИ ПОДУШКИ БЕЗОПАСНОСТИ<br>УХОДИТЕ, ЕСЛИ У ВАС "
@@ -887,8 +889,8 @@ msgid ""
 "MEANS</font>"
 msgstr ""
 "ZOE/FLENCE/Megane III/Scenic III EPS VIRGINIZER<br><font color='red'>ЭТОТ "
-"ПЛАГИН СБРОСИТ ДАННЫЕ IMMO EPS<br>УХОДИТЕ, ЕСЛИ У ВАС НЕТ ПОНИМАНИЯ, ЧТО ЭТО "
-"ОЗНАЧАЕТ</font>"
+"ПЛАГИН СБРОСИТ ДАННЫЕ IMMO EPS<br>УХОДИТЕ, ЕСЛИ У ВАС НЕТ ПОНИМАНИЯ, ЧТО ЭТО"
+" ОЗНАЧАЕТ</font>"
 
 msgid "Megane/Scenic III UCH Reset"
 msgstr "Сброс UCH Megane/Scenic III"
@@ -910,8 +912,8 @@ msgid ""
 msgstr ""
 "TWINGO III/ZOE/DOKKER/DUSTER ph2/TRAFIC III/CAPTUR/LODGY ph1/2<br>AIRBAG "
 "VIRGINIZER<br><font color='red'>ЭТОТ ПЛАГИН РАЗБЛОКИРУЕТ ДАННЫЕ ОБ АВАРИИ "
-"ПОДУШКИ БЕЗОПАСНОСТИ<br>УХОДИТЕ, ЕСЛИ У ВАС НЕТ ПОНИМАНИЯ, ЧТО ЭТО ОЗНАЧАЕТ</"
-"font>"
+"ПОДУШКИ БЕЗОПАСНОСТИ<br>УХОДИТЕ, ЕСЛИ У ВАС НЕТ ПОНИМАНИЯ, ЧТО ЭТО "
+"ОЗНАЧАЕТ</font>"
 
 #, python-format
 msgid "SdSEX stream: %s"
@@ -980,12 +982,12 @@ msgid "Reset all counters"
 msgstr "Сбросить все счетчики"
 
 msgid ""
-"<h1>TIPS</h1><ul><li>Insert key CARD</li><li>Put D position</li><li>Press/"
-"Stay START until <b>Remove card</b> message</li><li>Put P position</"
-"li><li>Keep key card inserted</li></ul>"
+"<h1>TIPS</h1><ul><li>Insert key CARD</li><li>Put D "
+"position</li><li>Press/Stay START until <b>Remove card</b> "
+"message</li><li>Put P position</li><li>Keep key card inserted</li></ul>"
 msgstr ""
-"<h1>СОВЕТЫ</h1><ul><li>Вставьте ключевую КАРТУ</li><li>Установите позицию D</"
-"li><li>Нажмите/Удерживайте START пока не появится сообщение <b>Удалите "
+"<h1>СОВЕТЫ</h1><ul><li>Вставьте ключевую КАРТУ</li><li>Установите позицию "
+"D</li><li>Нажмите/Удерживайте START пока не появится сообщение <b>Удалите "
 "карту</b></li><li>Установите позицию P</li><li>Держите ключевую карту "
 "вставленной</li></ul>"
 
@@ -1054,7 +1056,8 @@ msgstr ""
 
 #, python-format
 msgid ""
-"<font color=red>Request</font><font color=blue>'%s'</font> has missing inputs"
+"<font color=red>Request</font><font color=blue>'%s'</font> has missing "
+"inputs"
 msgstr ""
 "<font color=red>Запрос</font><font color=blue>'%s'</font> имеет "
 "отсутствующие входы"
@@ -1314,7 +1317,8 @@ msgstr "Посетите онлайн документацию по адресу
 
 msgid "This basic view will still show ECU documentation when available."
 msgstr ""
-"Этот базовый вид все равно будет показывать документацию ЭБУ, когда доступно."
+"Этот базовый вид все равно будет показывать документацию ЭБУ, когда "
+"доступно."
 
 msgid "Refresh rate (ms):"
 msgstr "Частота обновления (ms):"
@@ -2074,3 +2078,48 @@ msgstr "Ошибка длины кадра: "
 
 msgid "Frame hex error: "
 msgstr "Ошибка кадра hex: "
+
+msgid "Charts"
+msgstr "Графики"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Resume"
+msgstr "Продолжить"
+
+msgid "Paused"
+msgstr "Пауза"
+
+msgid "Export CSV"
+msgstr "Экспорт CSV"
+
+msgid "Clear"
+msgstr "Очистить"
+
+msgid "s"
+msgstr "с"
+
+msgid "Right-click a value on the screen → Add to chart"
+msgstr "Правый клик по значению на экране → Добавить на график"
+
+msgid "not polled"
+msgstr "не опрашивается"
+
+msgid "no numeric data"
+msgstr "нет числовых данных"
+
+msgid "Cannot write file: %s"
+msgstr "Не удалось записать файл: %s"
+
+msgid "Add to chart"
+msgstr "Добавить на график"
+
+msgid "Remove from chart"
+msgstr "Убрать с графика"
+
+msgid "Chart limit reached: max %d parameters"
+msgstr "Достигнут лимит графиков: не больше %d параметров"
+
+msgid "Cannot save window layout: %s"
+msgstr "Не удалось сохранить раскладку окна: %s"

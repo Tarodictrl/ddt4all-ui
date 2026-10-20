@@ -42,6 +42,8 @@ from ddt4all.ui.main_window.utils import (
 )
 from ddt4all.ui.parameters.param_widget import ParamWidget
 from ddt4all.ui.sniffer.sniffer import Sniffer
+from ddt4all.ui.theme import theme
+from ddt4all.ui.charts.chart_panel import ChartPanel, DEFAULT_WINDOW_S, MAX_SERIES
 import ddt4all.version as version
 
 _ = options.translator('ddt4all')
@@ -61,6 +63,7 @@ plugins_base_dir = BASE_DIR / ".." / ".." / "plugins"
 class MainWidget(widgets.QMainWindow):
     def __init__(self, app, vehicles, parent=None):
         super(MainWidget, self).__init__(parent)
+        self._skip_layout_save = False
         self.setIcon()
         if not options.simulation_mode:
             Path(get_logs_dir()).mkdir(parents=True, exist_ok=True)
@@ -122,20 +125,22 @@ class MainWidget(widgets.QMainWindow):
         self.setStatusBar(self.statusbar_widget)
 
         self.connectedstatus = widgets.QLabel()
+        self.connectedstatus.setObjectName("connectionPill")
         self.connectedstatus.setAlignment(core.Qt.AlignHCenter | core.Qt.AlignVCenter)
         self.protocolstatus = widgets.QLabel()
         self.progressstatus = widgets.QProgressBar()
         self.infostatus = widgets.QLabel()
 
         # Remove fixed widths to allow widgets to size properly
-        self.connectedstatus.setMinimumWidth(120)
         self.connectedstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
         
         self.protocolstatus.setMinimumWidth(180)
         self.protocolstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
         
         self.progressstatus.setMinimumWidth(200)
-        self.progressstatus.setMaximumHeight(20)
+        self.progressstatus.setFixedHeight(8)
+        self.progressstatus.setTextVisible(False)
+        self.progressstatus.setVisible(False)
         self.progressstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
         
         self.infostatus.setMinimumWidth(200)
@@ -161,14 +166,15 @@ class MainWidget(widgets.QMainWindow):
         cantimeoutlabel = widgets.QLabel(_("Can timeout (ms) [0:AUTO] :"))
         cantimeoutlabel.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
 
+        # Left: connection pill, protocol, messages. Right: settings and scan progress.
         self.statusbar_widget.addWidget(self.connectedstatus)
         self.statusbar_widget.addWidget(self.protocolstatus)
-        self.statusbar_widget.addWidget(self.progressstatus)
-        self.statusbar_widget.addWidget(refrestimelabel)
-        self.statusbar_widget.addWidget(self.refreshtimebox)
-        self.statusbar_widget.addWidget(cantimeoutlabel)
-        self.statusbar_widget.addWidget(self.cantimeout)
-        self.statusbar_widget.addWidget(self.infostatus)
+        self.statusbar_widget.addWidget(self.infostatus, 1)
+        self.statusbar_widget.addPermanentWidget(refrestimelabel)
+        self.statusbar_widget.addPermanentWidget(self.refreshtimebox)
+        self.statusbar_widget.addPermanentWidget(cantimeoutlabel)
+        self.statusbar_widget.addPermanentWidget(self.cantimeout)
+        self.statusbar_widget.addPermanentWidget(self.progressstatus)
 
         self.tabbedview = widgets.QTabWidget()
         self.setCentralWidget(self.tabbedview)
@@ -197,6 +203,7 @@ class MainWidget(widgets.QMainWindow):
         screen_widget = widgets.QWidget()
         self.treedock_widget = widgets.QDockWidget(self)
         self.treedock_widget.setWindowTitle(_("Screen Window"))
+        self.treedock_widget.setObjectName("screensDock")
         self.treedock_widget.setWidget(screen_widget)
         self.treeview_params = widgets.QTreeWidget()
         self.treeview_params.setSortingEnabled(True)
@@ -210,12 +217,14 @@ class MainWidget(widgets.QMainWindow):
 
         self.treedock_logs = widgets.QDockWidget(self)
         self.treedock_logs.setWindowTitle(_("Logs Window"))
+        self.treedock_logs.setObjectName("logsDock")
         self.logview = widgets.QTextEdit()
         self.logview.setReadOnly(True)
         self.treedock_logs.setWidget(self.logview)
 
         self.treedock_ecu = widgets.QDockWidget(self)
         self.treedock_ecu.setWindowTitle(_("Ecu Window"))
+        self.treedock_ecu.setObjectName("ecuDock")
         self.treeview_ecu = widgets.QListWidget(self.treedock_ecu)
         self.treedock_ecu.setWidget(self.treeview_ecu)
         self.treeview_ecu.clicked.connect(self.changeECU)
@@ -225,14 +234,28 @@ class MainWidget(widgets.QMainWindow):
         self.eculistwidget = EcuList(self.ecu_scan, self.treeview_ecu, self.vehicles)
         self.treeview_eculist = widgets.QDockWidget(self)
         self.treeview_eculist.setWindowTitle(_("Ecu List Window"))
+        self.treeview_eculist.setObjectName("ecuListDock")
         self.treeview_eculist.setWidget(self.eculistwidget)
+
+        self.chartpanel = ChartPanel(self)
+        self.chartpanel.set_refresh_ms(options.refreshrate)
+        self.chartpanel.set_window_s(options.configuration.get("charts_window_s", DEFAULT_WINDOW_S))
+        self.chartpanel.series_added.connect(lambda key: self._set_chart_marker(key, True))
+        self.chartpanel.series_removed.connect(lambda key: self._set_chart_marker(key, False))
+        self.chartpanel.limit_reached.connect(self._on_chart_limit)
+        self.chartdock = widgets.QDockWidget(self)
+        self.chartdock.setObjectName("chartsDock")
+        self.chartdock.setWindowTitle(_("Charts"))
+        self.chartdock.setWidget(self.chartpanel)
 
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treeview_eculist)
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treedock_ecu)
         self.addDockWidget(core.Qt.LeftDockWidgetArea, self.treedock_widget)
+        self.addDockWidget(core.Qt.BottomDockWidgetArea, self.chartdock)
         self.addDockWidget(core.Qt.BottomDockWidgetArea, self.treedock_logs)
 
         self.toolbar = self.addToolBar(_("ToolBar"))
+        self.toolbar.setObjectName("mainToolbar")
         self.toolbar.setContextMenuPolicy(core.Qt.PreventContextMenu)
 
         self.diagaction = widgets.QAction(gui.QIcon(ICON_DTC), _("Read DTC"), self)
@@ -311,6 +334,11 @@ class MainWidget(widgets.QMainWindow):
         self.toolbar.addWidget(self.zoominbutton)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.zoomoutbutton)
+        self.toolbar.addSeparator()
+        charts_button = widgets.QToolButton()
+        charts_button.setToolButtonStyle(core.Qt.ToolButtonTextOnly)
+        charts_button.setDefaultAction(self.chartdock.toggleViewAction())
+        self.toolbar.addWidget(charts_button)
 
         if options.simulation_mode:
             self.ui_edit_button = widgets.QPushButton(_("UI Edit"))
@@ -397,6 +425,7 @@ class MainWidget(widgets.QMainWindow):
         show_menu.addAction(self.treedock_logs.toggleViewAction())
         show_menu.addAction(self.treedock_ecu.toggleViewAction())
         show_menu.addAction(self.treeview_eculist.toggleViewAction())
+        show_menu.addAction(self.chartdock.toggleViewAction())
 
         view_menu.addSeparator()
 
@@ -473,9 +502,12 @@ class MainWidget(widgets.QMainWindow):
         about_content = help_menu.addAction(_("About"))
         about_content.triggered.connect(self.about_content_msg)
 
+        restored = self._restore_window_state()
         self.setConnected(True)
         self.tabbedview.setCurrentIndex(1)
         self.showMaximized()
+        if not restored:
+            core.QTimer.singleShot(0, self._apply_default_dock_sizes)
 
     def about_content_msg(self):
         msgbox = widgets.QMessageBox()
@@ -534,6 +566,7 @@ class MainWidget(widgets.QMainWindow):
         self.autorefresh.setChecked(False)
         self.refresh.setEnabled(True)
 
+        self.chartpanel.clear_all()
         if self.paramview:
             try:
                 self.paramview.tester_timer.stop()
@@ -572,6 +605,7 @@ class MainWidget(widgets.QMainWindow):
     def resetConfig(self):
         """Reset config"""
         options.create_new_config()
+        self._skip_layout_save = True
         msgbox = widgets.QMessageBox()
         appIcon = gui.QIcon(ICON_OBD)
         msgbox.setWindowIcon(appIcon)
@@ -629,11 +663,6 @@ class MainWidget(widgets.QMainWindow):
         except Exception as e:
             print(_("Error updating menu bar: %s") % e)
             
-    def toggle_theme(self):
-        """Toggle theme between light and dark"""
-        new_theme = not options.dark_mode
-        set_theme_style(2 if new_theme else 0)
-        
     def show_options_dialog(self):
         """Show options dialog for device settings"""
         options_dialog = MainWindowOptions(self.app)
@@ -828,6 +857,7 @@ class MainWidget(widgets.QMainWindow):
 
     def changeRefreshTime(self):
         options.refreshrate = self.refreshtimebox.value()
+        self.chartpanel.set_refresh_ms(options.refreshrate)
 
     def changeCanTimeout(self):
         options.cantimeout = self.cantimeout.value()
@@ -854,30 +884,33 @@ class MainWidget(widgets.QMainWindow):
             self.scan()
             return
         self.ecu_scan.clear()
-        self.logview.append(_("Scanning CAN") + " -> " + project)
-        self.ecu_scan.scan(self.progressstatus, self.infostatus, project)
-        self.logview.append(_("Scanning KWP") + " -> " + project)
-        self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus, project)
-        if options.configuration.get('doip_scan', True):
-            self.logview.append(_("Scanning DoIP") + " -> " + project)
-            self.ecu_scan.scan_doip(self.progressstatus, self.infostatus, project)
+        self.progressstatus.setVisible(True)
+        try:
+            self.logview.append(_("Scanning CAN") + " -> " + project)
+            self.ecu_scan.scan(self.progressstatus, self.infostatus, project)
+            self.logview.append(_("Scanning KWP") + " -> " + project)
+            self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus, project)
+            if options.configuration.get('doip_scan', True):
+                self.logview.append(_("Scanning DoIP") + " -> " + project)
+                self.ecu_scan.scan_doip(self.progressstatus, self.infostatus, project)
 
-        for ecu in self.ecu_scan.ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
-                item.setForeground(core.Qt.yellow)
-            else:
-                item.setForeground(core.Qt.green)
-            self.treeview_ecu.addItem(item)
+            for ecu in self.ecu_scan.ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
+                    item.setForeground(gui.QBrush(theme.color("warn")))
+                else:
+                    item.setForeground(gui.QBrush(theme.color("ok")))
+                self.treeview_ecu.addItem(item)
 
-        for ecu in self.ecu_scan.approximate_ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            item.setForeground(core.Qt.blue)
-            self.treeview_ecu.addItem(item)
-
-        self.progressstatus.setValue(0)
+            for ecu in self.ecu_scan.approximate_ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                item.setForeground(gui.QBrush(theme.color("accent")))
+                self.treeview_ecu.addItem(item)
+        finally:
+            self.progressstatus.setValue(0)
+            self.progressstatus.setVisible(False)
         
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
@@ -925,52 +958,106 @@ class MainWidget(widgets.QMainWindow):
         progressWidget.setLayout(progressLayout)
         self.progressstatus.setRange(0, self.ecu_scan.getNumAddr())
         self.progressstatus.setValue(0)
+        self.progressstatus.setVisible(True)
 
-        self.ecu_scan.clear()
-        if scancan:
-            self.ecu_scan.scan(self.progressstatus, self.infostatus, None, self.canlinecombo.currentIndex())
-        if scankwp:
-            self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus)
-        if scandoip and options.configuration.get('doip_scan', True):
-            self.ecu_scan.scan_doip(self.progressstatus, self.infostatus)
+        try:
+            self.ecu_scan.clear()
+            if scancan:
+                self.ecu_scan.scan(self.progressstatus, self.infostatus, None, self.canlinecombo.currentIndex())
+            if scankwp:
+                self.ecu_scan.scan_kwp(self.progressstatus, self.infostatus)
+            if scandoip and options.configuration.get('doip_scan', True):
+                self.ecu_scan.scan_doip(self.progressstatus, self.infostatus)
 
-        self.treeview_ecu.clear()
-        self.treeview_params.clear()
-        self.ecunamemap = {}
-        if self.paramview:
-            self.paramview.init(None)
+            self.treeview_ecu.clear()
+            self.treeview_params.clear()
+            self.ecunamemap = {}
+            if self.paramview:
+                self.paramview.init(None)
 
-        for ecu in self.ecu_scan.ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
-                item.setForeground(core.Qt.yellow)
-            else:
-                item.setForeground(core.Qt.green)
-            self.treeview_ecu.addItem(item)
+            for ecu in self.ecu_scan.ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                if '.xml' in self.ecu_scan.ecus[ecu].href.lower():
+                    item.setForeground(gui.QBrush(theme.color("warn")))
+                else:
+                    item.setForeground(gui.QBrush(theme.color("ok")))
+                self.treeview_ecu.addItem(item)
 
-        for ecu in self.ecu_scan.approximate_ecus.keys():
-            self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
-            item = widgets.QListWidgetItem(ecu)
-            item.setForeground(core.Qt.blue)
-            self.treeview_ecu.addItem(item)
-
-        self.progressstatus.setValue(0)
+            for ecu in self.ecu_scan.approximate_ecus.keys():
+                self.ecunamemap[ecu] = self.ecu_scan.approximate_ecus[ecu].name
+                item = widgets.QListWidgetItem(ecu)
+                item.setForeground(gui.QBrush(theme.color("accent")))
+                self.treeview_ecu.addItem(item)
+        finally:
+            self.progressstatus.setValue(0)
+            self.progressstatus.setVisible(False)
         
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
 
+    def _set_connection_state(self, state, text):
+        self.connectedstatus.setProperty("state", state)
+        self.connectedstatus.setText(text)
+        style = self.connectedstatus.style()
+        style.unpolish(self.connectedstatus)
+        style.polish(self.connectedstatus)
+
+    # ---- live charts ----
+    def _set_chart_marker(self, key, on):
+        if self.paramview is None:
+            return
+        try:
+            self.paramview.set_chart_marker(key, on)
+        except RuntimeError:
+            pass  # parameter view already destroyed
+
+    def _on_chart_limit(self):
+        # Not statusBar().showMessage: that would hide the connection pill for the duration.
+        previous = self.infostatus.text()
+        message = _("Chart limit reached: max %d parameters") % MAX_SERIES
+        self.infostatus.setText(message)
+
+        def restore():
+            try:
+                if self.infostatus.text() == message:
+                    self.infostatus.setText(previous)
+            except RuntimeError:
+                pass  # window already destroyed
+
+        core.QTimer.singleShot(4000, restore)
+
+    def _apply_default_dock_sizes(self):
+        self.resizeDocks([self.chartdock, self.treedock_logs], [900, 320], core.Qt.Horizontal)
+        self.resizeDocks([self.chartdock], [280], core.Qt.Vertical)
+
+    def _restore_window_state(self):
+        raw = options.configuration.get("window_state")
+        if not isinstance(raw, str) or not raw:
+            return False
+        try:
+            return bool(self.restoreState(core.QByteArray.fromBase64(raw.encode("ascii"))))
+        except Exception:
+            return False  # broken value: keep the default layout
+
+    def _save_window_state(self):
+        if self._skip_layout_save:
+            return
+        try:
+            options.configuration["window_state"] = bytes(self.saveState().toBase64()).decode("ascii")
+            options.configuration["charts_window_s"] = self.chartpanel.window_s()
+            options.save_config()
+        except Exception as error:
+            print(_("Cannot save window layout: %s") % error)
+
     def setConnected(self, on):
         if options.simulation_mode:
-            self.connectedstatus.setStyleSheet("background-color : orange; color: black")
-            self.connectedstatus.setText(_("EDITION MODE"))
+            self._set_connection_state("warn", _("EDITION MODE"))
             return
         if on:
-            self.connectedstatus.setStyleSheet("background-color : green; color: black")
-            self.connectedstatus.setText(_("CONNECTED"))
+            self._set_connection_state("ok", "● " + _("CONNECTED"))
         else:
-            self.connectedstatus.setStyleSheet("background-color : red; color: black")
-            self.connectedstatus.setText(_("DISCONNECTED"))
+            self._set_connection_state("error", "● " + _("DISCONNECTED"))
 
     def saveEcus(self):
         filename_tuple = widgets.QFileDialog.getSaveFileName(self, _("Save vehicule (keep '.ecu' extension)"),
@@ -1135,6 +1222,7 @@ class MainWidget(widgets.QMainWindow):
         self.set_can_combo(self.paramview.ecurequestsparser.ecu_protocol)
 
     def closeEvent(self, event):
+        self._save_window_state()
         if self.paramview:
             self.paramview.tester_timer.stop()
         self.snifferview.stopthread()
@@ -1204,6 +1292,7 @@ class MainWidget(widgets.QMainWindow):
 
         uiscale_mem = 12
 
+        self.chartpanel.clear_all()
         if self.paramview:
             uiscale_mem = self.paramview.uiscale
             self.paramview.setParent(None)
@@ -1213,6 +1302,7 @@ class MainWidget(widgets.QMainWindow):
         self.paramview = ParamWidget(self.scrollview, ecu_file, ecu_addr, ecu_name, self.logview,
                                                 self.protocolstatus, self.canlinecombo.currentIndex())
         self.paramview.infobox = self.infostatus
+        self.paramview.attach_chart_sink(self.chartpanel)
         if options.simulation_mode:
             self.requesteditor.set_ecu(self.paramview.ecurequestsparser)
             self.dataitemeditor.set_ecu(self.paramview.ecurequestsparser)

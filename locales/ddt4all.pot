@@ -203,7 +203,8 @@ msgid "DoIP ECU at %(addr)s responded with minimal data: %(response)s"
 msgstr ""
 
 #, python-format
-msgid "Initializing DoIP connection to %(ip)s:%(port)s (timeout: %(timeout)ss)"
+msgid ""
+"Initializing DoIP connection to %(ip)s:%(port)s (timeout: %(timeout)ss)"
 msgstr ""
 
 #, python-format
@@ -276,7 +277,9 @@ msgstr ""
 msgid "USB device detection error:"
 msgstr ""
 
-msgid "Note: This error does not affect serial communication or bypass cable functionality."
+msgid ""
+"Note: This error does not affect serial communication or bypass cable "
+"functionality."
 msgstr ""
 
 msgid "Trying to open port "
@@ -344,7 +347,9 @@ msgstr ""
 msgid "Unknown address: "
 msgstr ""
 
-msgid "send_can: received first frame only — AT CAF0 may have been reset by AT SP, or FC failed"
+msgid ""
+"send_can: received first frame only — AT CAF0 may have been reset by AT SP, "
+"or FC failed"
 msgstr ""
 
 #, python-format
@@ -633,7 +638,10 @@ msgstr ""
 msgid "Airbag Tools"
 msgstr ""
 
-msgid "AB90 (Clio III)/2<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"AB90 (Clio III)/2<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL"
+" UNLOCK AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT "
+"MEANS</font>"
 msgstr ""
 
 msgid "Check ACU Virgin"
@@ -676,7 +684,9 @@ msgstr ""
 msgid "ENTER AFTER SALE MODE"
 msgstr ""
 
-msgid "<font color='red'>MEGANE II CARD PROGRAMMING<br>EXPERIMENTAL : NOT TESTED YET</font>"
+msgid ""
+"<font color='red'>MEGANE II CARD PROGRAMMING<br>EXPERIMENTAL : NOT TESTED "
+"YET</font>"
 msgstr ""
 
 msgid "LEARN"
@@ -721,7 +731,9 @@ msgstr ""
 msgid "EPS Tools"
 msgstr ""
 
-msgid "Modus/Clio III EPS VIRGINIZER<br><font color='red'>THIS PLUGIN WILL RESET EPS IMMO DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"Modus/Clio III EPS VIRGINIZER<br><font color='red'>THIS PLUGIN WILL RESET "
+"EPS IMMO DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "BLANK STATUS & VIN READ"
@@ -764,7 +776,9 @@ msgstr ""
 msgid "Clio IV EPS Reset"
 msgstr ""
 
-msgid "Clio IV EPS VIRGINIZER<br><font color='red'>THIS PLUGIN WILL RESET EPS IMMO DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"Clio IV EPS VIRGINIZER<br><font color='red'>THIS PLUGIN WILL RESET EPS IMMO "
+"DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "Check EPS Virgin"
@@ -786,7 +800,9 @@ msgstr ""
 msgid "UCH Tools"
 msgstr ""
 
-msgid "LAGUNA II UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"LAGUNA II UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR "
+"UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "Check UCH Virgin"
@@ -804,19 +820,25 @@ msgstr ""
 msgid "Laguna III UCH Reset"
 msgstr ""
 
-msgid "LAGUNA III UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"LAGUNA III UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR "
+"UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "Megane/Scenic II UCH Reset"
 msgstr ""
 
-msgid "MEGANE II UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"MEGANE II UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR "
+"UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "Megane3 AIRBAG Reset"
 msgstr ""
 
-msgid "Megane III<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"Megane III<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK"
+" AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 #, python-format
@@ -826,19 +848,27 @@ msgstr ""
 msgid "ZOE/FLENCE/Megane III/Scenic III EPS Reset"
 msgstr ""
 
-msgid "ZOE/FLENCE/Megane III/Scenic III EPS VIRGINIZER<br><font color='red'>THIS PLUGIN WILL RESET EPS IMMO DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"ZOE/FLENCE/Megane III/Scenic III EPS VIRGINIZER<br><font color='red'>THIS "
+"PLUGIN WILL RESET EPS IMMO DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT "
+"MEANS</font>"
 msgstr ""
 
 msgid "Megane/Scenic III UCH Reset"
 msgstr ""
 
-msgid "MEGANE III UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"MEGANE III UCH VIRGINIZER<br><font color='red'>THIS PLUGIN WILL ERASE YOUR "
+"UCH<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "RSAT4 AIRBAG Reset"
 msgstr ""
 
-msgid "TWINGO III/ZOE/DOKKER/DUSTER ph2/TRAFIC III/CAPTUR/LODGY ph1/2<br>AIRBAG VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK AIRBAG CRASH DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"TWINGO III/ZOE/DOKKER/DUSTER ph2/TRAFIC III/CAPTUR/LODGY ph1/2<br>AIRBAG "
+"VIRGINIZER<br><font color='red'>THIS PLUGIN WILL UNLOCK AIRBAG CRASH "
+"DATA<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 #, python-format
@@ -890,7 +920,9 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-msgid "Zoe water pump counters<br><font color='red'>THIS PLUGIN WILL ERASE WATER PUMP COUNTERS<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
+msgid ""
+"Zoe water pump counters<br><font color='red'>THIS PLUGIN WILL ERASE WATER "
+"PUMP COUNTERS<br>GO AWAY IF YOU HAVE NO IDEA OF WHAT IT MEANS</font>"
 msgstr ""
 
 msgid "Check values"
@@ -902,7 +934,10 @@ msgstr ""
 msgid "Reset all counters"
 msgstr ""
 
-msgid "<h1>TIPS</h1><ul><li>Insert key CARD</li><li>Put D position</li><li>Press/Stay START until <b>Remove card</b> message</li><li>Put P position</li><li>Keep key card inserted</li></ul>"
+msgid ""
+"<h1>TIPS</h1><ul><li>Insert key CARD</li><li>Put D "
+"position</li><li>Press/Stay START until <b>Remove card</b> "
+"message</li><li>Put P position</li><li>Keep key card inserted</li></ul>"
 msgstr ""
 
 msgid "<font color='green'>Values read</font>"
@@ -961,11 +996,15 @@ msgid "Request %s not found"
 msgstr ""
 
 #, python-format
-msgid "<font color=green>Request</font><font color=blue>'%s'</font> has no missing input values"
+msgid ""
+"<font color=green>Request</font><font color=blue>'%s'</font> has no missing "
+"input values"
 msgstr ""
 
 #, python-format
-msgid "<font color=red>Request</font><font color=blue>'%s'</font> has missing inputs"
+msgid ""
+"<font color=red>Request</font><font color=blue>'%s'</font> has missing "
+"inputs"
 msgstr ""
 
 #, python-format
@@ -1168,7 +1207,9 @@ msgstr ""
 msgid "No Value"
 msgstr ""
 
-msgid "<center>This Software is free, but I need money to buy cables/ECUs and make this application more reliable</center>"
+msgid ""
+"<center>This Software is free, but I need money to buy cables/ECUs and make "
+"this application more reliable</center>"
 msgstr ""
 
 msgid "Yes I contribute"
@@ -1208,7 +1249,8 @@ msgstr ""
 msgid "WebEngine not available."
 msgstr ""
 
-msgid "For full documentation with web browsing capability, install PyQtWebEngine:"
+msgid ""
+"For full documentation with web browsing capability, install PyQtWebEngine:"
 msgstr ""
 
 msgid "Visit the online documentation at:"
@@ -1968,4 +2010,49 @@ msgid "Frame length error: "
 msgstr ""
 
 msgid "Frame hex error: "
+msgstr ""
+
+msgid "Charts"
+msgstr ""
+
+msgid "Pause"
+msgstr ""
+
+msgid "Resume"
+msgstr ""
+
+msgid "Paused"
+msgstr ""
+
+msgid "Export CSV"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "s"
+msgstr ""
+
+msgid "Right-click a value on the screen → Add to chart"
+msgstr ""
+
+msgid "not polled"
+msgstr ""
+
+msgid "no numeric data"
+msgstr ""
+
+msgid "Cannot write file: %s"
+msgstr ""
+
+msgid "Add to chart"
+msgstr ""
+
+msgid "Remove from chart"
+msgstr ""
+
+msgid "Chart limit reached: max %d parameters"
+msgstr ""
+
+msgid "Cannot save window layout: %s"
 msgstr ""
