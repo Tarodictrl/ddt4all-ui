@@ -2,8 +2,8 @@ name: DDT4ALL APP
 
 on:
   push:
-  pull_request:
     branches: [ master ]
+  pull_request:
 
 jobs:
   test:
