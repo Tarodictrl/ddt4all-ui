@@ -200,6 +200,12 @@ QPushButton[primary="true"]:checked {
   color: {accent};
   border-color: {accent};
 }
+QPushButton:default:disabled,
+QPushButton[primary="true"]:disabled {
+  background-color: {surface_alt};
+  color: {text_muted};
+  border-color: {border};
+}
 
 /* ---- Inputs ---- */
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {

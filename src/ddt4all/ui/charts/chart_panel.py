@@ -130,6 +130,8 @@ class ChartPanel(widgets.QWidget):
     def remove_series(self, key: str) -> None:
         if self._series.pop(key, None) is None:
             return
+        if not self._series and self.pause_button.isChecked():
+            self.pause_button.setChecked(False)
         self._sync_view()
         self.series_removed.emit(key)
 
