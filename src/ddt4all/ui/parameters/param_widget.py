@@ -71,6 +71,8 @@ class ParamWidget(widgets.QWidget):
         self.record_values = []
         self.record_keys = {}
         self.infobox = None
+        self.chart_sink = None
+        self.display_widgets = {}
 
     def set_soft_fc(self, b):
         if options.elm is not None:
@@ -823,17 +825,53 @@ class ParamWidget(widgets.QWidget):
 
     def drawDisplays(self, screen):
         self.displaydict = {}
+        self.display_widgets = {}
         if self.parser == 'xml':
             displays = self.getChildNodesByName(screen, "Display")
 
             for disp in displays:
                 displaywidget = DisplayWidget(self.panel, self.uiscale, self.ecurequestsparser)
                 displaywidget.initXML(disp, self.displaydict)
+                self._register_display(displaywidget)
         else:
             displays = screen['displays']
             for disp in displays:
                 displaywidget = DisplayWidget(self.panel, self.uiscale, self.ecurequestsparser)
                 displaywidget.initJson(disp, self.displaydict)
+                self._register_display(displaywidget)
+
+        if self.chart_sink is not None:
+            self.chart_sink.set_polled_keys(self._polled_chart_keys())
+
+    # ---- live charts ----
+    def _register_display(self, displaywidget):
+        if not displaywidget.chart_key:
+            return
+        self.display_widgets[displaywidget.chart_key] = displaywidget
+        displaywidget.chart_sink = self.chart_sink
+        if self.chart_sink is not None:
+            displaywidget.set_charted(self.chart_sink.has_series(displaywidget.chart_key))
+
+    def _polled_chart_keys(self):
+        keys = set()
+        for key, widget in self.display_widgets.items():
+            request = self.ecurequestsparser.requests.get(widget.chart_request)
+            if request is not None and not request.manualsend:
+                keys.add(key)
+        return keys
+
+    def attach_chart_sink(self, sink):
+        self.chart_sink = sink
+        for widget in self.display_widgets.values():
+            widget.chart_sink = sink
+            widget.set_charted(sink is not None and sink.has_series(widget.chart_key))
+        if sink is not None:
+            sink.set_polled_keys(self._polled_chart_keys())
+
+    def set_chart_marker(self, key, on):
+        widget = self.display_widgets.get(key)
+        if widget is not None:
+            widget.set_charted(on)
 
     def drawButtons(self, screen):
         global smap
@@ -1184,6 +1222,7 @@ class ParamWidget(widgets.QWidget):
             ecu_data = data_struct.data
             data_item = request.dataitems[ecu_data.name]
             value = ecu_data.getDisplayValue(elm_response, data_item, request.ecu_file.endianness)
+            chart_value = value
 
             if value is None:
                 qlabel.setStyleSheet("background-color: red;color: black")
@@ -1201,6 +1240,8 @@ class ParamWidget(widgets.QWidget):
                 self.recorddict[data_item.name] = out_value.replace(".", ",")
 
             qlabel.setText(value + ' ' + ecu_data.unit)
+            if self.chart_sink is not None:
+                self.chart_sink.push(request_name + "/" + ecu_data.name, time.monotonic(), chart_value)
 
             if update_inputs:
                 for inputkey in self.inputdict:
