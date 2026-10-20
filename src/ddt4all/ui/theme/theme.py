@@ -1,4 +1,5 @@
 """Applies the Fluent theme (QSS template + QPalette) and exposes theme colours."""
+import logging
 import sys
 
 import PyQt5.QtCore as core
@@ -10,6 +11,8 @@ from ddt4all.ui.theme.palette import (
     SERIES_COLORS_DARK,
     SERIES_COLORS_LIGHT,
 )
+
+log = logging.getLogger(__name__)
 
 TEMPLATE_PATH = ":/styles/fluent.qss"
 
@@ -59,6 +62,7 @@ def _load_template():
     import ddt4all.generated.resources_rc  # noqa: F401  (registers :/styles/fluent.qss)
     qfile = core.QFile(TEMPLATE_PATH)
     if not qfile.open(core.QFile.ReadOnly):
+        log.warning("Cannot open theme template %s; no stylesheet applied", TEMPLATE_PATH)
         return ""
     try:
         return bytes(qfile.readAll()).decode("utf-8")
