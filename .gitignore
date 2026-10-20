@@ -58,3 +58,6 @@ ddt4all-*.AppImage
 
 # PyInstaller spec is source (some global gitignores ignore *.spec)
 !/setup_tools/pyinstaller/*.spec
+
+# Packaging output (setup_tools/*/build-*, builddmg.sh)
+/dist-packages/
