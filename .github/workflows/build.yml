@@ -15,7 +15,34 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # ECU database: bundled into both Windows installers and attached to every release.
+  # To ship a newer one, change both values (the sha256 is shown next to the asset on the release page).
+  ECU_ZIP_URL: https://github.com/Tarodictrl/ddt4all-ui/releases/download/v3.2.0/ecu.zip
+  ECU_ZIP_SHA256: 6d87b3d6cdb2d80e93fe59219600016da53c4788621c2e03b3f55dd4809da419
+
 jobs:
+  ecu-db:
+    name: ECU database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download ecu.zip
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-delay 10 -o ecu.zip "${ECU_ZIP_URL}"
+          echo "${ECU_ZIP_SHA256}  ecu.zip" | sha256sum -c -
+          ls -lh ecu.zip
+
+      # the file is a zip already: store it as is instead of compressing it again
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ecu-db
+          path: ecu.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
   version:
     name: Compute version
     runs-on: ubuntu-latest
@@ -98,7 +125,7 @@ jobs:
 
   windows-installer:
     name: Windows installer ${{ matrix.arch }}
-    needs: version
+    needs: [version, ecu-db]
     runs-on: windows-latest
     env:
       VERSION: ${{ needs.version.outputs.version }}
@@ -146,6 +173,13 @@ jobs:
           Copy-Item -Path "$pythonSrc\*" -Destination $dist -Recurse -Force
           Write-Host "Python copied from $pythonSrc to $dist"
           & "$dist\python.exe" -c "import ddt4all; print('ddt4all OK')"
+
+      # the .iss files pick ecu.zip up from their own folder
+      - name: Get ECU database
+        uses: actions/download-artifact@v8
+        with:
+          name: ecu-db
+          path: setup_tools/inno-win-setup
 
       - name: Build installer
         shell: pwsh
@@ -401,6 +435,7 @@ jobs:
     name: Publish release
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
+      - ecu-db
       - windows-installer
       - windows-portable
       - linux-appimage
