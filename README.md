@@ -72,6 +72,7 @@ Get the file for your platform from the
 | Fedora / RHEL / openSUSE | `DDT4ALL-<version>-linux-x86_64.rpm` | `sudo dnf install ./DDT4ALL-<version>-linux-x86_64.rpm` |
 | Linux AppImage | `DDT4ALL-<version>-linux-x86_64.AppImage` | `chmod +x DDT4ALL-<version>-linux-x86_64.AppImage` then run it |
 | macOS (Apple Silicon) | `DDT4ALL-<version>-macos-arm64.dmg` | Open the dmg, drag `DDT4ALL` to *Applications* |
+| ECU database | `ecu.zip` | Already inside the Windows installers; for the other builds see [ECU database location](#ecu-database-location) |
 
 Notes:
 
@@ -88,13 +89,14 @@ Notes:
 
 ## ECU database location
 
-DDT4ALL does **not** ship the ECU database. It looks for `ecu.zip` (or an extracted
-`ecus/` folder with `eculist.xml`) in its **working directory**, which depends on the build:
+The two Windows installers already contain the ECU database. Every release also carries it as a
+separate `ecu.zip` file, which is what the other builds need. DDT4ALL looks for `ecu.zip` (or an
+extracted `ecus/` folder with `eculist.xml`) in its **working directory**, which depends on the build:
 
 | Build | Put `ecu.zip` / `ecus/` in |
 |-------|----------------------------|
 | Windows portable zip | the folder that contains `DDT4ALL.exe` |
-| Windows installer (x64 / x86) | the install folder (default `C:\Program Files\DDT4ALL`); the shortcuts start the app there. **The installer deletes this folder on reinstall, upgrade and uninstall, so keep a copy of `ecu.zip` elsewhere.** |
+| Windows installer (x64 / x86) | the install folder (default `C:\Program Files\DDT4ALL`); the installer puts `ecu.zip` there and the shortcuts start the app there. **The installer deletes this folder on reinstall, upgrade and uninstall, so keep a copy of any `ecu.zip` you changed elsewhere.** |
 | `.deb` / `.rpm` | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
 | macOS `.dmg` | `~/Library/Application Support/ddt4all/` (created on first run) |
 | AppImage | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
@@ -386,6 +388,8 @@ The Windows installer bundles a full Python. Before compiling, copy a Python ins
 already has the project dependencies (`pip install -e ".[dev,can,network,bluetooth]"`) to
 `\DDT4ALL-Dist-Versions\Python313` on the drive root (32-bit script: `\DDT4ALL-Dist-Versions\Python38-32`).
 The installer takes its version from `setup_tools/inno-win-setup/version.h`.
+It also bundles the ECU database: put `ecu.zip` into `setup_tools/inno-win-setup/` before compiling
+(CI downloads it from the URL set at the top of `build.yml`).
 More details: [`setup_tools/README.md`](setup_tools/README.md), [`setup_tools/mac-os/README.md`](setup_tools/mac-os/README.md).
 
 ---
@@ -403,6 +407,9 @@ More details: [`setup_tools/README.md`](setup_tools/README.md), [`setup_tools/ma
 4. The *Build packages* workflow ([`build.yml`](.github/workflows/build.yml)) builds all seven
    packages, and its `release` job publishes a GitHub Release with generated notes and every
    file attached. The tag name without `v` becomes the version in the file names.
+   The same run downloads `ecu.zip` from `ECU_ZIP_URL` in `build.yml` (checked against
+   `ECU_ZIP_SHA256`), bundles it into both Windows installers and attaches it to the release as
+   `ecu.zip`. To ship a newer database, change both values.
 
 GitHub Actions must be enabled once on the fork (**Actions** tab → enable workflows);
 until then no workflow runs. Only tags starting with `v` create a release.
