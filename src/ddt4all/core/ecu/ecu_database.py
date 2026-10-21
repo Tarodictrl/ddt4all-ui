@@ -34,7 +34,9 @@ class EcuDatabase:
             self.addr_group_mapping[k] = v[0]
             self.addr_group_mapping_long[k] = v[1]
 
-        xmlfile = options.ecus_dir + "/eculist.xml"
+        xml_dir = options.get_ecus_dir()
+        xmlfile = os.path.join(xml_dir, options.ECU_DB_LIST_NAME) if xml_dir else None
+        zip_path = options.get_ecu_zip_path()
 
         jsonecu_files = glob.glob("./json/*.json.targets")
         for jsonecu_file in jsonecu_files:
@@ -81,10 +83,16 @@ class EcuDatabase:
 
                 self.targets.append(ecu_ident)
 
-        if os.path.exists("ecu.zip") and not forceXML:
-            zf = zipfile.ZipFile("ecu.zip", mode='r')
-            jsdb = zf.read("db.json")
-            dbdict = json.loads(jsdb)
+        dbdict = {}
+        if zip_path and not forceXML:
+            try:
+                with zipfile.ZipFile(zip_path, mode='r') as zf:
+                    jsdb = zf.read("db.json")
+                dbdict = json.loads(jsdb)
+            except (OSError, KeyError, ValueError, zipfile.BadZipFile) as e:
+                print(_("Cannot read ECU database"), zip_path, ":", e)
+                dbdict = {}
+        if dbdict:
             for href, targetv in dbdict.items():
                 self.numecu += 1
                 ecugroup = targetv['group']
@@ -128,7 +136,7 @@ class EcuDatabase:
 
                 self.targets.append(ecu_ident)
 
-        if os.path.exists(xmlfile):
+        if xmlfile and os.path.exists(xmlfile):
             xdom = xml.dom.minidom.parse(xmlfile)
             self.xmldoc = xdom.documentElement
 

@@ -13,6 +13,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class Port:
     '''Enhanced serial port and TCP connection handler
        Supports USB, Bluetooth, WiFi OBD-II devices with cross-platform compatibility
@@ -72,7 +73,7 @@ class Port:
             if saved_settings and 'baudrate' in saved_settings:
                 self.settings = saved_settings
                 translate_arg = _("Using saved settings for")
-                print (("%(text)s %(type)s: %(settings)s") % {"text": translate_arg, "type": self.adapter_type, "settings": self.settings})
+                print(("%(text)s %(type)s: %(settings)s") % {"text": translate_arg, "type": self.adapter_type, "settings": self.settings})
             else:
                 self.settings = DeviceManager.get_optimal_settings(self.adapter_type)
                 translate_arg = _("Using optimal settings for")
@@ -172,7 +173,7 @@ class Port:
         try:
             print(_("Initializing DoIP connection to %(ip)s:%(port)s") % {"ip": ip, "port": port})
             self.doip_device = doip_devices.DoIPDevice(ip, port)
-            
+
             if self.doip_device.connect():
                 self.connectionStatus = True
                 self.portType = 3  # DoIP connection type
@@ -180,7 +181,7 @@ class Port:
             else:
                 print(_("DoIP connection failed: %(ip)s:%(port)s") % {"ip": ip, "port": port})
                 self.connectionStatus = False
-                
+
         except Exception as e:
             print(_("DoIP initialization failed: %s") % e)
             self.connectionStatus = False
@@ -403,7 +404,7 @@ class Port:
         tb = time.time()
         self.buff = ""
         deadline = tb + time_out
-    
+
         while True:
             if not options.simulation_mode:
                 if self.portType == 1 and self.hdr is not None:
@@ -453,7 +454,7 @@ class Port:
                 else:
                     print(_("Bluetooth connection - skipping baudrate check"))
                     break
-            
+
             # self.hdr.flushInput()
             if self.portType == 0:  # Serial/USB only
                 self.hdr.reset_input_buffer()
@@ -475,8 +476,8 @@ class Port:
                 self.buff += byte
                 tc = time.time()
                 if '>' in self.buff:
-                    options.port_speed = s                   
-                    print("\n" + (_("Start COM speed: ") %  s))
+                    options.port_speed = s
+                    print("\n" + (_("Start COM speed: ") % s))
                     if self.portType == 0:  # Serial/USB only
                         self.hdr.timeout = timeout
                     elif self.portType == 1:  # TCP/WiFi

@@ -10,6 +10,7 @@ import time
 import PyQt5.QtCore as core
 import PyQt5.QtWidgets as widgets
 
+import ddt4all.version as version
 from ddt4all.ui.charts.chart_panel import ChartPanel
 from ddt4all.ui.theme import theme
 
@@ -24,11 +25,12 @@ DEMO_SERIES = [
 
 
 def main():
+    widgets.QApplication.setAttribute(core.Qt.AA_UseHighDpiPixmaps, True)
     app = widgets.QApplication(sys.argv)
     theme.apply_theme(app, "--dark" in sys.argv)
 
     window = widgets.QMainWindow()
-    window.setWindowTitle("DDT4All charts demo")
+    window.setWindowTitle(version.__appname__ + " charts demo")
     panel = ChartPanel()
     panel.set_refresh_ms(100)
     dock = widgets.QDockWidget("Charts", window)

@@ -4,13 +4,14 @@
 #define MyAppVersion    Str(__version__)
 #define MyAppCodeName   StringChange(Str(__codename__), " ", "-") + "-x86"
 #define MyAppDir        MyAppName
+#define MyAppFileName   StringChange(MyAppName, " ", "-")
 #define MyAppAuthor     Str(__author__)
 #define MyAppCompany    Str(__author__)
 #define MyAppContact    Str(__email__)  
-#define MyAppSupportURL "https://github.com/cedricp/ddt4all" 
-#define MyAppReadmeMd   "https://github.com/cedricp/ddt4all/blob/master/README.md"
+#define MyAppSupportURL "https://github.com/Tarodictrl/ddt4all-ui" 
+#define MyAppReadmeMd   "https://github.com/Tarodictrl/ddt4all-ui/blob/master/README.md"
 #define MyCopyright     Str(__copyright__) + " - " + MyAppAuthor
-#define APP_ID          "{3E70988F-0D77-4639-800D-2CD9DB2617B1}"
+#define APP_ID          "{72068A15-8E4A-4F7A-B4D9-3C8EEC728207}"
 #define PYTHON_FOLDER   "Python386-32"
 
 [Setup]
@@ -32,7 +33,7 @@ AppPublisher={#MyAppCompany}
 DefaultDirName={pf}\{#MyAppDir}
 DefaultGroupName={#MyAppName}
 SetupIconFile=..\..\resources\icons\obd.ico
-OutputBaseFilename={#MyAppName}-Windows-Installer-v{#MyAppVersion}_{#MyAppCodeName}
+OutputBaseFilename={#MyAppFileName}-Windows-Installer-v{#MyAppVersion}_{#MyAppCodeName}
 VersionInfoCompany={#MyAppCompany}
 ArchitecturesAllowed=x86 x64
 Compression=lzma2/ultra
@@ -69,7 +70,7 @@ Type: filesandordirs; Name: "{group}"
 Type: filesandordirs; Name: "{app}"
 
 [Run]
-Filename: "{app}\{#PYTHON_FOLDER}\python.exe"; Parameters: "-m ddt4all"; WorkingDir: "{app}"; Flags: postinstall nowait skipifsilent runasoriginaluser; Description: "{cm:OpenAfterInstall}"
+Filename: "{app}\{#PYTHON_FOLDER}\pythonw.exe"; Parameters: "-m ddt4all"; WorkingDir: "{app}"; Flags: postinstall nowait skipifsilent runasoriginaluser; Description: "{cm:OpenAfterInstall}"
 
 [Code]
 procedure InstallMSRuntimes;
@@ -116,11 +117,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "microsoft_runtimes"; Description: "{cm:MSruntimes}"; GroupDescription: "Microsoft Visual C++ Redistributable"; Flags: checkedonce
 
 [Icons]
-Name: "{app}\{#MyAppName}"; Filename: "{app}\{#PYTHON_FOLDER}\python.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "-m ddt4all"; Comment: "{#MyAppName} Diagnostic Tool"
+Name: "{app}\{#MyAppName}"; Filename: "{app}\{#PYTHON_FOLDER}\pythonw.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "-m ddt4all"; Comment: "{#MyAppName} Diagnostic Tool"
 Name: "{group}\{cm:UninstallProgram}"; Filename: "{uninstallexe}"; Comment: "Uninstall {#MyAppName} Diagnostic Tool"
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#PYTHON_FOLDER}\python.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "-m ddt4all"; Comment: "{#MyAppName} Diagnostic Tool"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#PYTHON_FOLDER}\pythonw.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "-m ddt4all"; Comment: "{#MyAppName} Diagnostic Tool"
 Name: "{group}\{#MyAppName}-Fix"; Filename: "{cmd}"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "/C ""{app}\fixModX86.bat"" -p"; Comment: "{#MyAppName} Diagnostic Tool Fix"
-Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#PYTHON_FOLDER}\python.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "-m ddt4all"; Comment: "{#MyAppName} Diagnostic Tool"; Tasks: desktopicon
+Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#PYTHON_FOLDER}\pythonw.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\icons\obd.ico"; Parameters: "-m ddt4all"; Comment: "{#MyAppName} Diagnostic Tool"; Tasks: desktopicon
 
 [CustomMessages]
 en.MSruntimes=Install Microsoft Visual C++ Redistributable runtimes files

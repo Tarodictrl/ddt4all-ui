@@ -2,6 +2,7 @@ from ... import options
 
 _ = options.translator('ddt4all')
 
+
 class DeviceManager:
     """Enhanced device manager for OBD-II adapters with optimal settings and STN/STPX support"""
 
@@ -67,14 +68,14 @@ class DeviceManager:
         try:
             if not elm_instance or not hasattr(elm_instance, 'cmd'):
                 return 'unknown'
-            
+
             # Get device identification
             elm_version = elm_instance.cmd("ATI")
             if not elm_version:
                 return 'unknown'
-            
+
             elm_version = elm_version.upper()
-            
+
             # Check for specific device signatures
             if "VGATE" in elm_version or "ICAR" in elm_version:
                 return 'vgate'
@@ -95,7 +96,7 @@ class DeviceManager:
                 return 'elm327'
             else:
                 return 'unknown'
-                
+
         except Exception as e:
             print(_("Device detection error: %s") % e)
             return 'unknown'
@@ -106,16 +107,16 @@ class DeviceManager:
         try:
             if not elm_instance:
                 return False
-            
+
             # Auto-detect device type if not provided
             if not device_type:
                 device_type = DeviceManager.detect_device_type(elm_instance)
-            
+
             # Get optimal settings
-            settings = DeviceManager.get_optimal_settings(device_type)
-            
+            # settings = DeviceManager.get_optimal_settings(device_type)
+
             return True
-            
+
         except Exception as e:
             print(_("Device initialization error: %s") % e)
             return False

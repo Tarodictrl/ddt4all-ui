@@ -6,6 +6,7 @@ from ddt4all.core.parameters.helpers import (
     dumpVehicles
 )
 
+
 def cmd_parameters(args: argparse.Namespace) -> int:
 
     if args.zipconvert:

@@ -1,12 +1,14 @@
-"""Entry point of the frozen (PyInstaller) DDT4ALL build.
+"""Entry point of the frozen (PyInstaller) DDT4ALL UI build.
 
-DDT4ALL looks for its ECU database (``ecu.zip``, ``ecus/``) in the *current
-working directory*, so a frozen build must start in a sensible, writable
+Unless the user picked a database location (``ecu_database_path`` in
+``config.json``), DDT4ALL UI looks for its ECU database (``ecu.zip``, ``ecus/``)
+in the *current working directory*; it also keeps ``config.json``, ``json/``
+and ``logs/`` there. So a frozen build must start in a sensible, writable
 folder:
 
-* Windows (portable zip): the folder that holds ``DDT4ALL.exe``.
+* Windows (portable zip): the folder that holds ``DDT4ALL-UI.exe``.
 * Linux / macOS (``.deb``, ``.rpm``, AppImage, ``.dmg``): the per-user data
-  folder (``platformdirs.user_data_dir("ddt4all")``), created on first run,
+  folder (``platformdirs.user_data_dir("ddt4all-ui")``), created on first run,
   because the install location (``/opt``, a mounted AppImage, an ``.app``
   bundle) is read-only.
 
@@ -37,7 +39,7 @@ def resolve_workdir(platform=None, executable=None, environ=None):
 
     from platformdirs import PlatformDirs
 
-    return Path(PlatformDirs("ddt4all").user_data_dir)
+    return Path(PlatformDirs("ddt4all-ui").user_data_dir)
 
 
 def enter_workdir():

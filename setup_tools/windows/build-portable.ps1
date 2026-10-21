@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Build the DDT4ALL portable Windows zip (PyInstaller onedir + Compress-Archive).
+    Build the DDT4ALL UI portable Windows zip (PyInstaller onedir + Compress-Archive).
 
 .DESCRIPTION
     Usage:   powershell -NoProfile -ExecutionPolicy Bypass -File setup_tools/windows/build-portable.ps1 VERSION
@@ -17,9 +17,9 @@
       DDT4ALL_OUT_DIR    where the zip is written                      (default: <repo>\dist-packages)
 
     Output, in DDT4ALL_OUT_DIR:
-      DDT4ALL-<VERSION>-windows-x64-portable.zip
+      DDT4ALL-UI-<VERSION>-windows-x64-portable.zip
       containing one top-level folder DDT4ALL\ with DDT4ALL.exe (plus _internal\).
-      The app stores ecu.zip / ecus\ / config.json / json\ / logs\ next to DDT4ALL.exe
+      The app stores ecu.zip / ecus\ / config.json / json\ / logs\ next to DDT4ALL-UI.exe
       (the launcher creates json\ on first run), so the unzipped folder must live
       somewhere writable.
 #>
@@ -58,7 +58,7 @@ if ($LASTEXITCODE -ne 0) { Fail "PyInstaller is not installed for '$Python' (pip
 $Work = Join-Path $BuildRoot "windows-portable"
 $PyiDist = Join-Path $Work "pyinstaller\dist"
 $PyiWork = Join-Path $Work "pyinstaller\work"
-$Zip = Join-Path $OutDir "DDT4ALL-$Version-windows-x64-portable.zip"
+$Zip = Join-Path $OutDir "DDT4ALL-UI-$Version-windows-x64-portable.zip"
 
 if (Test-Path -LiteralPath $Work) { Remove-Item -LiteralPath $Work -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $PyiDist, $PyiWork, $OutDir | Out-Null
@@ -69,8 +69,8 @@ $env:DDT4ALL_VERSION = $Version
 & $Python -m PyInstaller --noconfirm --clean --distpath $PyiDist --workpath $PyiWork $Spec
 if ($LASTEXITCODE -ne 0) { Fail "PyInstaller failed with exit code $LASTEXITCODE" }
 
-$AppDir = Join-Path $PyiDist "DDT4ALL"
-if (-not (Test-Path -LiteralPath (Join-Path $AppDir "DDT4ALL.exe"))) {
+$AppDir = Join-Path $PyiDist "DDT4ALL-UI"
+if (-not (Test-Path -LiteralPath (Join-Path $AppDir "DDT4ALL-UI.exe"))) {
     Fail "PyInstaller did not produce $AppDir\DDT4ALL.exe"
 }
 

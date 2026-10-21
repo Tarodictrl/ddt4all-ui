@@ -5,15 +5,16 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 # TODO: Review DoIP device interface implementation.
 class DoIPDevice:
     """DoIP Device Interface for Ethernet-based diagnostic tools
-    
+
     Provides high-level interface for DoIP communication with modern automotive
     diagnostic interfaces. Compatible with Bosch MTS, VXDIAG, VAG ODIS, JLR DoIP VCI and other
     ISO 13400 compliant devices.
     """
-    
+
     # TODO: Review DoIP device initialization defaults and options usage.
     def __init__(self, target_ip="192.168.0.12", target_port=13400):
         self.doip = DoIPConnection(target_ip, target_port)
@@ -22,12 +23,12 @@ class DoIPDevice:
         self.startSession = ""
         self.rsp_cache = {}
         self.device_type = "doip_device"
-        
+
         # Get device-specific settings
         self.settings = options.get_device_settings(self.device_type)
         self.timeout = self.settings.get('timeout', 4.0)
         self.doip.timeout = self.timeout
-    
+
     # TODO: Review DoIPDevice connect logic and ISO 13400 vehicle identification.
     def connect(self):
         """Establish DoIP connection with vehicle identification"""
@@ -44,38 +45,38 @@ class DoIPDevice:
                 self.disconnect()
                 return False
         return False
-    
+
     # TODO: Review DoIPDevice disconnect cleanup.
     def disconnect(self):
         """Close DoIP connection gracefully"""
         self.doip.disconnect()
         self.connectionStatus = False
-    
+
     # TODO: Review DoIP request conversion and error handling.
     def request(self, req, positive='', cache=True, serviceDelay="0"):
         """Send diagnostic request over DoIP with proper error handling"""
         if not self.connectionStatus:
             raise DoIPProtocolError(_("Not connected to DoIP device"))
-        
+
         # Convert hex string to bytes with validation
         try:
             req_bytes = bytes.fromhex(req.replace(' ', ''))
         except ValueError as e:
             raise DoIPProtocolError(_("Invalid hex request format: %s") % e)
-        
+
         # Send diagnostic message with addressing
         try:
             response = self.doip.send_diagnostic_message(req_bytes)
             return response
         except Exception as e:
             raise DoIPProtocolError(_("DoIP request failed: %s") % e)
-    
+
     # TODO: Review DoIP session start flow and response validation.
     def start_session_can(self, start_session):
         """Start diagnostic session over DoIP according to ISO 13400"""
         if not self.connectionStatus:
             return False
-        
+
         try:
             # Convert start session command to hex bytes
             session_bytes = bytes.fromhex(start_session.replace(' ', ''))
@@ -86,24 +87,24 @@ class DoIPDevice:
             return False
         except Exception as e:
             raise DoIPProtocolError(_("DoIP session start failed: %s") % e)
-    
+
     # TODO: Review DoIP CAN initialization path.
     def init_can(self):
         """Initialize CAN communication over DoIP"""
         if not self.connectionStatus:
             return False
-        
+
         try:
             # Start diagnostic session with extended addressing
             return self.start_session_can("10C0")
         except Exception as e:
             raise DoIPProtocolError(_("DoIP CAN initialization failed: %s") % e)
             return False
-    
+
     # TODO: Review DoIP CAN addressing logic for electric ECUs and standard ECUs.
     def set_can_addr(self, addr, ecu, canline=0):
         """Set CAN addressing for DoIP communication with Electric ECU support
-        
+
         Special support for Electric ECUs and EVC (Electric Vehicle Controller) in newer vehicles.
         Electric vehicles use various addressing schemes including 29-bit, extended addressing,
         and special protocols for high-voltage systems.
@@ -132,7 +133,7 @@ class DoIPDevice:
         # Special handling for Electric ECUs and EVC
         addr_upper = addr.upper()
         is_electric_ecu = addr_upper in ['EVC', 'BMS', 'OBC', 'MCU', 'PEB', 'LBC', 'INV', 'VCM', 'BCM', 'GWM']
-        
+
         if is_electric_ecu:
             self.doip.extended_29bit = True
             print(_("DoIP: Electric ECU detected - %s") % addr)

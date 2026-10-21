@@ -4,6 +4,7 @@ import argparse
 from dataclasses import dataclass, field
 from typing import Callable, Any
 
+
 @dataclass
 class ArgumentSpec:
     flags: tuple[str, ...]

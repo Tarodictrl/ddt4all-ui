@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build DDT4ALL.app (PyInstaller) and package it into a .dmg with hdiutil.
+# Build "DDT4ALL UI.app" (PyInstaller) and package it into a .dmg with hdiutil.
 #
 # Usage:   setup_tools/mac-os/builddmg.sh VERSION
 #   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.42.abc1234
@@ -14,14 +14,14 @@
 #   DDT4ALL_BUILD_DIR    scratch root; this script uses <dir>/macos-dmg
 #                        and wipes only that sub-folder             (default: <repo>/build)
 #   DDT4ALL_OUT_DIR      where the dmg is written                   (default: <repo>/dist-packages)
-#   CODESIGN_IDENTITY    if set, DDT4ALL.app is re-signed with this identity
+#   CODESIGN_IDENTITY    if set, "DDT4ALL UI.app" is re-signed with this identity
 #                        (codesign --deep, hardened runtime, entitlements.plist)
 #                        before the dmg is created. Unset = whatever signature
 #                        PyInstaller applied (ad-hoc on Apple Silicon).
 #
 # Output, in $DDT4ALL_OUT_DIR (<arch> = `uname -m`, arm64 on a macos-15 runner):
-#   DDT4ALL-<VERSION>-macos-<arch>.dmg
-#   The volume holds DDT4ALL.app and an "Applications" symlink for drag-and-drop.
+#   DDT4ALL-UI-<VERSION>-macos-<arch>.dmg
+#   The volume holds "DDT4ALL UI.app" and an "Applications" symlink for drag-and-drop.
 set -euo pipefail
 
 die() { echo "error: $*" >&2; exit 1; }
@@ -44,7 +44,7 @@ OUT_DIR="${DDT4ALL_OUT_DIR:-$ROOT/dist-packages}"
 SPEC="$ROOT/setup_tools/pyinstaller/ddt4all.spec"
 ENTITLEMENTS="$SCRIPT_DIR/entitlements.plist"
 ARCH="$(uname -m)"
-DMG="$OUT_DIR/DDT4ALL-$VERSION-macos-$ARCH.dmg"
+DMG="$OUT_DIR/DDT4ALL-UI-$VERSION-macos-$ARCH.dmg"
 
 # --- tool checks ------------------------------------------------------------
 [ "$(uname -s)" = "Darwin" ] || die "this script must run on macOS"
@@ -68,7 +68,7 @@ mkdir -p "$PYI_DIST" "$PYI_WORK" "$STAGE" "$OUT_DIR"
 info "PyInstaller (version $VERSION)"
 DDT4ALL_VERSION="$VERSION" "$PYTHON" -m PyInstaller --noconfirm --clean \
     --distpath "$PYI_DIST" --workpath "$PYI_WORK" "$SPEC"
-APP="$PYI_DIST/DDT4ALL.app"
+APP="$PYI_DIST/DDT4ALL UI.app"
 [ -d "$APP" ] || die "PyInstaller did not produce $APP"
 info "App size: $(du -sh "$APP" | cut -f1)"
 # Non-fatal: PyInstaller ad-hoc signs the bundle; report it if the signature is not intact.
@@ -87,7 +87,7 @@ fi
 
 # --- 3. stage and build the dmg --------------------------------------------
 info "Staging dmg contents"
-ditto "$APP" "$STAGE/DDT4ALL.app"
+ditto "$APP" "$STAGE/DDT4ALL UI.app"
 ln -s /Applications "$STAGE/Applications"
 
 rm -f "$DMG"
@@ -95,7 +95,7 @@ rm -f "$DMG"
 info "hdiutil create: $DMG"
 attempt=1
 max_attempts=5
-until hdiutil create -volname "DDT4ALL" -srcfolder "$STAGE" -ov -format UDZO "$DMG"; do
+until hdiutil create -volname "DDT4ALL UI" -srcfolder "$STAGE" -ov -format UDZO "$DMG"; do
     if [ "$attempt" -ge "$max_attempts" ]; then
         die "hdiutil create failed after $max_attempts attempts"
     fi

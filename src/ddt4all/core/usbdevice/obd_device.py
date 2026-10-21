@@ -6,6 +6,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class OBDDevice:
     def __init__(self):
         self.device = UsbCan()
@@ -17,7 +18,7 @@ class OBDDevice:
         self.startSession = ""
         self.rsp_cache = {}
         self.device_type = self.device.device_type
-        
+
         # Get device-specific settings
         self.settings = options.get_device_settings(self.device_type)
 
@@ -41,7 +42,7 @@ class OBDDevice:
 
     def init_can(self):
         self.device.set_can_mode_isotp()
-        
+
         # ELS27 V5 specific initialization for CAN pins 12-13
         if self.device_type == "els27" and "V5" in self.device.descriptor.upper():
             try:
@@ -84,7 +85,6 @@ class OBDDevice:
 
         self.device.set_tx_addr(TXa)
         self.device.set_rx_addr(RXa)
-
 
 
 if __name__ == '__main__':

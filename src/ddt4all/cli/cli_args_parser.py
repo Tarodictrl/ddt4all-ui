@@ -54,6 +54,7 @@ COMMANDS: list[CommandSpec] = [
 ARGUMENTS = [
 ]
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
@@ -70,4 +71,3 @@ def build_parser() -> argparse.ArgumentParser:
         sub.set_defaults(handler=cmd.handler)
 
     return parser
-

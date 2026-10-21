@@ -31,12 +31,14 @@ DEFAULT_EXCLUDES = [
 ]
 WIN_CMD_LIMIT = 8000
 
+
 # ---- Helpers ----
 def which_or_fail(cmd):
     path = shutil.which(cmd)
     if not path:
         raise RuntimeError(f"Required command '{cmd}' not found in PATH. Install gettext/tools.")
     return path
+
 
 def run(cmd, dry_run=False, verbose=False, capture_output=False):
     if dry_run or verbose:
@@ -46,6 +48,7 @@ def run(cmd, dry_run=False, verbose=False, capture_output=False):
     if capture_output:
         return subprocess.run(cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return subprocess.run(cmd, check=False)
+
 
 def gather_pyfiles(root: Path, excludes, include_patterns=None):
     include_patterns = include_patterns or ["*.py"]
@@ -64,19 +67,22 @@ def gather_pyfiles(root: Path, excludes, include_patterns=None):
             pyfiles.append(p.resolve())
     return sorted(pyfiles)
 
+
 def make_temp_file_with_lines(lines):
     tf = tempfile.NamedTemporaryFile(delete=False, mode="w", encoding="utf-8", newline="\n")
-    for l in lines:
-        tf.write(str(l))
+    for line in lines:
+        tf.write(str(line))
         tf.write("\n")
     tf.close()
     return Path(tf.name)
+
 
 def ensure_dir(p: Path, dry_run=False, verbose=False):
     if dry_run or verbose:
         print("MKDIR:", str(p))
     if not dry_run:
         p.mkdir(parents=True, exist_ok=True)
+
 
 # ---- Commands ----
 def pot_create(args):
@@ -124,6 +130,7 @@ def pot_create(args):
         return 2
     print(f"[OK] {pot_path} generated ({len(pyfiles)} files analyzed)")
     return 0
+
 
 def po_merge(args):
     msgmerge = which_or_fail("msgmerge")
@@ -176,6 +183,7 @@ def po_merge(args):
 
     return 0
 
+
 def po_to_mo(args):
     """
     Compile .po to .mo only in generated/<lang>/LC_MESSAGES/<domain>.mo
@@ -213,6 +221,7 @@ def po_to_mo(args):
             print(f"[ERR] compilation failed {po}")
 
     return 0
+
 
 def full_gen(args):
     """
@@ -252,6 +261,7 @@ def full_gen(args):
     ))
     return r3
 
+
 # ---- CLI ----
 def main():
     parser = argparse.ArgumentParser(description="i18n helper (pot-create, po-merge, po-to-mo) + full-gen")
@@ -273,8 +283,8 @@ def main():
     p2 = sub.add_parser("po-merge", parents=[common], help="merge .pot -> .po (msgmerge + msgattrib)")
     p2.add_argument("--pot", help="path to .pot (if omitted: <localedir>/<domain>.pot)")
 
-    p3 = sub.add_parser("po-to-mo", parents=[common], help="compile all .po to .mo (in generated only)")
-    p4 = sub.add_parser("po2mo", parents=[common], help="alias for po-to-mo")
+    _ = sub.add_parser("po-to-mo", parents=[common], help="compile all .po to .mo (in generated only)")
+    _ = sub.add_parser("po2mo", parents=[common], help="alias for po-to-mo")
 
     p5 = sub.add_parser("full-gen", parents=[common], help="pot-create + po-merge + po-to-mo (in generated)")
     p5.add_argument("--root", default=DEFAULT_SCAN_ROOT, help="root for .py scan (def: src)")
@@ -298,6 +308,7 @@ def main():
     except RuntimeError as e:
         print("[ERROR]", e)
         sys.exit(5)
+
 
 if __name__ == "__main__":
     main()

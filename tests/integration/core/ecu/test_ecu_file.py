@@ -1,9 +1,9 @@
 import json
 
 import ddt4all.options as options
-_ = options.translator('ddt4all')
 from ddt4all.core.ecu.ecu_file import EcuFile
 
+_ = options.translator('ddt4all')
 
 
 def test_ecu_file_loads_xml_and_exercises_main_paths(dummy_ecu_file):
@@ -43,7 +43,6 @@ def test_ecu_file_loads_xml_and_exercises_main_paths(dummy_ecu_file):
     assert device.devicedata == {"State": "FF"}
 
     assert "ReadVIN" in ecu.requests
-    
 
     assert "VIN" in ecu.data
     assert "Mode" in ecu.data
@@ -63,10 +62,6 @@ def test_ecu_file_loads_xml_and_exercises_main_paths(dummy_ecu_file):
     assert mode_data.bytescount == 1
     assert mode_data.lists == {1: "ON", 2: "OFF"}
     assert mode_data.items == {"ON": 1, "OFF": 2}
-
-
-############""
-
 
     dumped_json = ecu.dumpJson()
     dumped = json.loads(dumped_json)
@@ -121,7 +116,6 @@ def test_ecu_file_get_requests(dummy_ecu_file):
 
     ecu = EcuFile(str(dummy_ecu_file(type="xml")), isfile=True)
 
-
     request = ecu.get_request("ReadVIN")
 
     assert request is ecu.get_request("readvin")
@@ -170,10 +164,10 @@ def test_ecu_file_dump_idents(dummy_ecu_file):
         ],
     }
 
+
 def test_ecu_file_dump_json(dummy_ecu_file):
 
     ecu = EcuFile(str(dummy_ecu_file(type="xml")), isfile=True)
-
 
     dumped_json = ecu.dumpJson()
     dumped = json.loads(dumped_json)
@@ -400,7 +394,6 @@ def test_ecu_file_connect_to_hardware_kwp2000_fastinit(dummy_ecu_file, mocker):
 def test_ecu_file_connect_to_hardware_iso8(dummy_ecu_file, mocker):
 
     ecu = EcuFile(str(dummy_ecu_file(protocol="iso8", type="xml")), isfile=True)
-
 
     assert ecu.ecu_protocol == "ISO8"
     assert ecu.fastinit is False

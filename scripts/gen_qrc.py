@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from fnmatch import fnmatch
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,12 +24,24 @@ class ResourceGroup:
 
 DEFAULT_EXTS = {".png", ".jpg", ".jpeg", ".svg", ".ico", ".qss", ".ui", ".ttf", ".otf"}
 
+# Files the app never loads through Qt resources (paths relative to the group
+# root, fnmatch patterns): logo sources and desktop/installer icon containers.
+# obd.png (window icon) must stay.
+EXCLUDE = (
+    "app/*",        # logo SVG sources, used by scripts/gen_icons.py only
+    "obd.ico",      # Windows exe/installer icon, read from disk by the packagers
+    "obd.icns",     # macOS bundle icon, read from disk by the packagers
+)
+
 
 def iter_files(root: Path, exts: set[str]) -> list[Path]:
     files: list[Path] = []
     for p in root.rglob("*"):
-        if p.is_file() and p.suffix.lower() in exts:
-            files.append(p)
+        if not (p.is_file() and p.suffix.lower() in exts):
+            continue
+        if any(fnmatch(p.relative_to(root).as_posix(), pattern) for pattern in EXCLUDE):
+            continue
+        files.append(p)
     return sorted(files)
 
 
@@ -77,7 +90,7 @@ def compile_qrc(qrc_path: Path, output_py: Path) -> None:
     subprocess.check_call(cmd)
     print(f"[gen-qrc] Wrote: {output_py}")
     # Remove the generated qrc file
-    #qrc_path.unlink()
+    # qrc_path.unlink()
 
 
 def main(argv: list[str] | None = None) -> int:

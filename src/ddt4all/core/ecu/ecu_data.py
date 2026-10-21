@@ -10,6 +10,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class EcuData:
     def __init__(self, data, name=''):
         self.bitscount = 8

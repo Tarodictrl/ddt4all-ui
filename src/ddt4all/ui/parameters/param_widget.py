@@ -265,7 +265,7 @@ class ParamWidget(widgets.QWidget):
             for label in self.layoutdict['screens'][self.current_screen]['labels']:
                 txt = label['text']
                 if txt == self.currentwidget.text():
-                    nln = widgets.QInputDialog.getText(self, 'DDT4All', _('Enter label name'))
+                    nln = widgets.QInputDialog.getText(self, version.__appname__, _('Enter label name'))
                     if not nln[1]:
                         return
                     newlabelname = nln[0]
@@ -572,9 +572,9 @@ class ParamWidget(widgets.QWidget):
             jsondata = jsfile.read()
             jsfile.close()
         else:
-            zf = zipfile.ZipFile("ecu.zip", mode='r')
             layoutfile = self.ddtfile[5:] + ".layout"
-            jsondata = zf.read(layoutfile)
+            with zipfile.ZipFile(options.get_ecu_zip_path() or options.ECU_DB_ZIP_NAME, mode='r') as zf:
+                jsondata = zf.read(layoutfile)
         if os.path.exists(targetsfile):
             jsfile = open(targetsfile, "r")
             self.targetsdata = json.loads(jsfile.read())

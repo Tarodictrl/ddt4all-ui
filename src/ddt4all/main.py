@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 
+import PyQt5.QtCore as core
 import PyQt5.QtGui as gui
 import PyQt5.QtWidgets as widgets
 
@@ -87,10 +88,17 @@ def main(argv=None) -> int:
         except (OSError, IOError) as e:
             print(_("Warning: Could not write version.h: %s") % e)
 
-    try:
-        sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
-    except (OSError, ValueError):
-        sys.stdout = codecs.getwriter('utf8')(sys.stdout)
+    if sys.stdout is None or sys.stderr is None:
+        # Started without a console (pythonw.exe, windowed exe): there is
+        # nowhere to print to, so discard the output instead of crashing.
+        devnull = open(os.devnull, "w", encoding="utf-8")
+        sys.stdout = sys.stdout or devnull
+        sys.stderr = sys.stderr or devnull
+    else:
+        try:
+            sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
+        except (OSError, ValueError):
+            sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
 
     vehicles = load_this()
@@ -98,6 +106,9 @@ def main(argv=None) -> int:
     options.simulation_mode = True
     options.socket_timeout = False
 
+    # Must be set before the QApplication exists: QIcon.pixmap() then returns
+    # pixmaps that carry their devicePixelRatio (sharp icons on HiDPI screens).
+    widgets.QApplication.setAttribute(core.Qt.AA_UseHighDpiPixmaps, True)
     app = widgets.QApplication(sys.argv)
 
     try:
@@ -108,7 +119,7 @@ def main(argv=None) -> int:
     except (FileNotFoundError, json.JSONDecodeError, KeyError):
         set_theme_style(app, 0)
 
-    if os.path.exists(options.ecus_dir + '/eculist.xml'):
+    if options.get_ecus_dir():
         print(_("Using custom DDT database"))
 
     Path(get_json_dir()).mkdir(parents=True, exist_ok=True)

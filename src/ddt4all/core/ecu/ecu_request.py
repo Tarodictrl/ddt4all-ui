@@ -3,6 +3,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class EcuRequest:
     def __init__(self, data, ecu_file):
         self.minbytes = 0

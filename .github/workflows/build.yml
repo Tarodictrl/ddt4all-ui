@@ -157,7 +157,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
 
       # The .iss files name the installer after __version__/__codename__; rename it
-      # to the common DDT4ALL-<version>-<platform>-<arch> scheme.
+      # to the common DDT4ALL-UI-<version>-<platform>-<arch> scheme.
       - name: Collect installer
         shell: pwsh
         run: |
@@ -165,7 +165,7 @@ jobs:
           $built = @(Get-ChildItem "setup_tools\inno-win-setup\Output\*.exe")
           if ($built.Count -ne 1) { throw "Expected exactly one installer, found $($built.Count)" }
           New-Item -ItemType Directory -Force -Path dist-packages | Out-Null
-          $target = "dist-packages\DDT4ALL-$env:VERSION-windows-${{ matrix.arch }}-setup.exe"
+          $target = "dist-packages\DDT4ALL-UI-$env:VERSION-windows-${{ matrix.arch }}-setup.exe"
           Copy-Item $built[0].FullName $target
           Get-Item $target | Select-Object Name, Length
 
@@ -213,20 +213,20 @@ jobs:
           if (-not $zip) { throw "No portable zip produced" }
           $dest = Join-Path $env:RUNNER_TEMP "portable-check"
           Expand-Archive -Path $zip.FullName -DestinationPath $dest -Force
-          $exe = Join-Path $dest "DDT4ALL\DDT4ALL.exe"
-          if (-not (Test-Path $exe)) { throw "DDT4ALL.exe not found in $($zip.Name)" }
+          $exe = Join-Path $dest "DDT4ALL-UI\DDT4ALL-UI.exe"
+          if (-not (Test-Path $exe)) { throw "DDT4ALL-UI.exe not found in $($zip.Name)" }
           Write-Host "OK: $exe"
 
           # Start the app headless with a temporary DDT4ALL_HOME; it must still be running after 20 s.
-          $home_dir = Join-Path $env:RUNNER_TEMP "ddt4all-home"
+          $home_dir = Join-Path $env:RUNNER_TEMP "ddt4all-ui-home"
           New-Item -ItemType Directory -Force -Path $home_dir | Out-Null
           $env:QT_QPA_PLATFORM = "offscreen"
           $env:DDT4ALL_HOME = $home_dir
           $proc = Start-Process -FilePath $exe -PassThru
           Start-Sleep -Seconds 20
-          if ($proc.HasExited) { throw "DDT4ALL.exe exited early with code $($proc.ExitCode)" }
+          if ($proc.HasExited) { throw "DDT4ALL-UI.exe exited early with code $($proc.ExitCode)" }
           Stop-Process -Id $proc.Id -Force
-          Write-Host "OK: DDT4ALL.exe was still running after 20 s"
+          Write-Host "OK: DDT4ALL-UI.exe was still running after 20 s"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -269,12 +269,12 @@ jobs:
       - name: Build AppImage
         run: bash setup_tools/appimage/build.sh "${VERSION}"
 
-      # build.sh writes ddt4all-<version>-x86_64.AppImage; rename to the common scheme.
+      # build.sh writes ddt4all-ui-<version>-x86_64.AppImage; rename to the common scheme.
       - name: Collect AppImage
         run: |
           set -euo pipefail
           mkdir -p dist-packages
-          mv "ddt4all-${VERSION}-x86_64.AppImage" "dist-packages/DDT4ALL-${VERSION}-linux-x86_64.AppImage"
+          mv "ddt4all-ui-${VERSION}-x86_64.AppImage" "dist-packages/DDT4ALL-UI-${VERSION}-linux-x86_64.AppImage"
           ls -lh dist-packages
 
       - name: Upload artifact
@@ -326,14 +326,14 @@ jobs:
           set -euo pipefail
           ls -lh dist-packages
           sudo apt-get install -y ./dist-packages/*.deb
-          test -e /opt/ddt4all/DDT4ALL
-          dpkg -L ddt4all | grep -E 'ddt4all\.desktop$'
+          test -e /opt/ddt4all-ui/DDT4ALL-UI
+          dpkg -L ddt4all-ui | grep -E 'ddt4all-ui\.desktop$'
 
       # exit 124 from timeout = the app was still running after 20 s = success
       - name: Smoke test (start the installed app)
         run: |
           set +e
-          DDT4ALL_HOME="$(mktemp -d)" QT_QPA_PLATFORM=offscreen timeout 20 /opt/ddt4all/DDT4ALL
+          DDT4ALL_HOME="$(mktemp -d)" QT_QPA_PLATFORM=offscreen timeout 20 /opt/ddt4all-ui/DDT4ALL-UI
           rc=$?
           [ "$rc" -eq 124 ] || { echo "smoke failed rc=$rc"; exit 1; }
           echo "OK: the app was still running after 20 s"
@@ -376,9 +376,9 @@ jobs:
       - name: Smoke test (start the app)
         run: |
           set -euo pipefail
-          APP="build/macos-dmg/pyinstaller/dist/DDT4ALL.app"
-          test -x "${APP}/Contents/MacOS/DDT4ALL"
-          DDT4ALL_HOME="$(mktemp -d)" QT_QPA_PLATFORM=offscreen "${APP}/Contents/MacOS/DDT4ALL" &
+          APP="build/macos-dmg/pyinstaller/dist/DDT4ALL UI.app"
+          test -x "${APP}/Contents/MacOS/DDT4ALL-UI"
+          DDT4ALL_HOME="$(mktemp -d)" QT_QPA_PLATFORM=offscreen "${APP}/Contents/MacOS/DDT4ALL-UI" &
           PID=$!
           sleep 20
           if ! kill -0 "${PID}" 2>/dev/null; then

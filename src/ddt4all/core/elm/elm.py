@@ -80,7 +80,6 @@ def detect_usb_device():
         _usb_port_cache = None
 
 
-
 def clean_bytestring(value):
     # If is bytes -> decode
     # print(repr(value), type(value))
@@ -145,7 +144,6 @@ def get_available_ports():
     if _usb_port_cache is not None:
         ports.append(_usb_port_cache)
         usb_serial_ports.add(_usb_port_cache[0])
-
 
     # Check for DoIP devices with optimized connectivity checking (only for DoIP-capable devices)
     # DoIP devices - Use configured IP address instead of hardcoded values
@@ -334,11 +332,8 @@ def reconnect_elm():
             port, desc, hwid, status = port_info
         elif len(port_info) >= 3:
             port, desc, hwid = port_info
-            status = "unknown"
         else:
             port, desc = port_info
-            hwid = ""
-            status = "unknown"
 
         device_key = DeviceManager.normalize_adapter_type(current_adapter)
         saved_settings = options.get_device_settings(device_key, port)
@@ -458,10 +453,12 @@ class ELM:
             self.ATCFC0 = options.opt_cfc0
 
             # Purge unread data - only if port is valid
-            if (self.port is not None and
-                    hasattr(self.port, 'expect') and
-                    hasattr(self.port, 'connectionStatus') and
-                    self.port.connectionStatus):
+            if (
+                self.port is not None
+                and hasattr(self.port, 'expect')
+                and hasattr(self.port, 'connectionStatus')
+                and self.port.connectionStatus
+            ):
                 if getattr(self.port, "portType", 0) == 1:
                     try:
                         self.port.write(b"\r")
@@ -522,7 +519,6 @@ class ELM:
                     try:
                         version_parts = firmware_version.split(".")
                         version_number = int("".join(re.sub(r"\D", "", part) for part in version_parts))
-                                                                                                      
                         if version_number >= 420:
                             options.opt_stpx_full = True
                     except Exception as e:
@@ -843,8 +839,6 @@ class ELM:
         if not all(c in string.hexdigits for c in command):
             return "HEX ERROR"
 
-        request_sid = command[:2].upper()  # save before framing loop modifies command
-
         # do framing
         raw_command = []
         cmd_len = len(command) // 2
@@ -896,12 +890,14 @@ class ELM:
                     if s[:1] == '3':  # FlowControl
                         # extract Burst Size
                         BS = s[2:4]
-                        if BS == '': BS = '03'
+                        if BS == '':
+                            BS = '03'
                         BS = int(BS, 16)
 
                         # extract Frame Interval
                         ST = s[4:6]
-                        if ST == '': ST = 'EF'
+                        if ST == '':
+                            ST = 'EF'
                         if ST[:1].upper() == 'F':
                             ST = int(ST[1:2], 16) * 100
                         else:
@@ -1010,7 +1006,8 @@ class ELM:
             noerrors = False
 
         # Check for negative
-        if result[:2] == '7F': noerrors = False
+        if result[:2] == '7F':
+            noerrors = False
 
         # populate L1 cache
         if noerrors and init_command[:2] in options.safe_commands:
@@ -1076,18 +1073,17 @@ class ELM:
         if len(responses) == 0:  # no data in response
             return ""
 
-        nodataflag = False
         for s in responses:
 
             if 'NO DATA' in s:
-                nodataflag = True
                 break
 
             if all(c in string.hexdigits for c in s):  # some data
                 result = s
 
         # Check for negative
-        if result[:2] == '7F': noerrors = False
+        if result[:2] == '7F':
+            noerrors = False
 
         if noerrors:
             # split by bytes and return
@@ -1118,7 +1114,7 @@ class ELM:
             return "ODD ERROR"
         if not all(c in string.hexdigits for c in command):
             return "HEX ERROR"
-        
+
         '''
         captures the SID from the command prior to framing in ELM CAN/UDS communication
           - defined in send_can/send_can_cfc as request_sid = command[:2].upper()
@@ -1384,11 +1380,13 @@ class ELM:
                 if s[:1] == '3':  # FlowControl
                     # extract Burst Size
                     BS = s[2:4]
-                    if BS == '': BS = '03'
+                    if BS == '':
+                        BS = '03'
                     BS = int(BS, 16)
                     # extract Frame Interval
                     ST = s[4:6]
-                    if ST == '': ST = 'EF'
+                    if ST == '':
+                        ST = 'EF'
                     if ST[:1].upper() == 'F':
                         ST = int(ST[1:2], 16) * 100
                     else:
@@ -1728,14 +1726,16 @@ class ELM:
                 self.cmd("STP 53")
                 self.cmd("STPBR 250000")
                 tmprsp = self.send_raw("0210C0")
-                if not 'CAN ERROR' in tmprsp: return
+                if 'CAN ERROR' not in tmprsp:
+                    return
             self.cmd("AT SP 8")
         else:
             if options.opt_can2 and options.opt_stn_basic:
                 self.cmd("STP 54")
                 self.cmd("STPBR 250000")
                 tmprsp = self.send_raw("0210C0")
-                if not 'CAN ERROR' in tmprsp: return
+                if 'CAN ERROR' not in tmprsp:
+                    return
             self.cmd("AT SP 9")
 
     def set_can_500(self, addr='ABC'):
@@ -1744,14 +1744,16 @@ class ELM:
                 self.cmd("STP 53")
                 self.cmd("STPBR 500000")
                 tmprsp = self.send_raw("0210C0")  # send anything
-                if not 'CAN ERROR' in tmprsp: return
+                if 'CAN ERROR' not in tmprsp:
+                    return
             self.cmd("AT SP 6")
         else:
             if options.opt_can2 and options.opt_stn_basic:
                 self.cmd("STP 54")
                 self.cmd("STPBR 500000")
                 tmprsp = self.send_raw("0210C0")
-                if not 'CAN ERROR' in tmprsp: return
+                if 'CAN ERROR' not in tmprsp:
+                    return
             self.cmd("AT SP 7")
 
     def start_session_iso(self, start_session):
@@ -1791,8 +1793,8 @@ class ELM:
 
         if self.lf != 0:
             self.lf.write(
-                '#' * 60 + "\n# Connect to: [" + clean_bytestring(ecu['ecuname']) + "] Addr: " + addr + " Protocol: " +
-                ecu['protocol'] + "\n" + '#' * 60 + "\n")
+                '#' * 60 + "\n# Connect to: [" + clean_bytestring(ecu['ecuname']) + "] Addr: " + addr + " Protocol: "
+                + ecu['protocol'] + "\n" + '#' * 60 + "\n")
             self.lf.flush()
 
         self.currentprotocol = "iso"
@@ -1819,8 +1821,8 @@ class ELM:
 
         if self.lf != 0:
             self.lf.write(
-                '#' * 60 + "\n# Connect to: [" + clean_bytestring(ecu['ecuname']) + "] Addr: " + addr + " Protocol: " +
-                ecu['protocol'] + "\n" + '#' * 60 + "\n")
+                '#' * 60 + "\n# Connect to: [" + clean_bytestring(ecu['ecuname']) + "] Addr: " + addr + " Protocol: "
+                + ecu['protocol'] + "\n" + '#' * 60 + "\n")
             self.lf.flush()
 
         self.currentprotocol = "iso"

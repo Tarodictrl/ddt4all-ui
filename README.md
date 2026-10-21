@@ -1,4 +1,4 @@
-# DDT4ALL
+# DDT4ALL UI
 
 [![Build packages](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/build.yml/badge.svg)](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/build.yml)
 [![Tests](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/python-app.yml/badge.svg)](https://github.com/Tarodictrl/ddt4all-ui/actions/workflows/python-app.yml)
@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-GPL%203.0-green.svg)](license.txt)
 
-DDT4ALL is a cross-platform diagnostic application for CAN bus vehicle networks.
+DDT4ALL UI is a cross-platform diagnostic application for CAN bus vehicle networks.
 It lets you **create your own ECU parameter screens** and **communicate with ECUs**
 through various OBD-II interfaces, including ELM327, Vlinker FS, VGate iCar Pro,
 OBDLink SX/EX and ELS27 adapters.
@@ -15,8 +15,11 @@ OBDLink SX/EX and ELS27 adapters.
 > user interface (Fluent light/dark theme, live charts) and ready-made packages for
 > Windows, Linux and macOS built by CI. Diagnostic functionality comes from upstream;
 > the original author and contributors are credited [below](#credits-and-support).
+>
+> It is renamed **DDT4ALL UI** (package `ddt4all-ui`, command `ddt4all-ui`, own data folder and
+> installer ID), so it can be **installed next to the original DDT4All** without clashing with it.
 
-- **Current version:** `v3.2.0` (Celestial Nemean)
+- **Current version:** `v4.0.0` (Moonshine)
 - **License:** [GPL-3.0-or-later](license.txt)
 
 ---
@@ -35,7 +38,7 @@ OBDLink SX/EX and ELS27 adapters.
 ### Fluent theme
 
 A light Fluent-style look with a matching dark variant, applied from a single QSS
-template. Switch it in **View → Theme** (*Light Theme* / *Dark Theme*). The status bar
+template. Switch it in **View → Theme** (_Light Theme_ / _Dark Theme_). The status bar
 shows a connection pill (`CONNECTED` / `DISCONNECTED` / `EDITION MODE`), the protocol,
 scan messages and the refresh rate / CAN timeout fields.
 
@@ -46,12 +49,12 @@ A bottom **Charts** dock plots ECU parameters in real time, one lane per paramet
 
 1. Open an ECU screen and start polling (connect an adapter or use simulation).
 2. **Right-click a value** on the screen and choose **Add to chart** (up to 8 lanes;
-   use *Remove from chart* or the lane's `×` to drop one).
+   use _Remove from chart_ or the lane's `×` to drop one).
 3. Pick the window: **30 / 60 / 120 / 300 s**. **Pause** freezes the view while data
    keeps buffering; while paused the **mouse wheel** scrolls back in time. **Resume** returns to now.
 4. **CSV** exports the whole buffer of all lanes; **Clear** empties the data but keeps the lanes.
 
-Show or hide the dock via **View → Panels → Charts** or the *Charts* toolbar button.
+Show or hide the dock via **View → Panels → Charts** or the _Charts_ toolbar button.
 Dock layout and the chart window size are restored on the next start.
 To try the panel without an adapter: `python -m ddt4all.ui.charts.demo [--dark]`.
 
@@ -63,42 +66,63 @@ Get the file for your platform from the
 [**latest release**](https://github.com/Tarodictrl/ddt4all-ui/releases/latest)
 (`<version>` is the release number, e.g. `3.1.3`).
 
-| Platform | File | Install |
-|----------|------|---------|
-| Windows x64 installer | `DDT4ALL-<version>-windows-x64-setup.exe` | Run the installer |
-| Windows x86 (32-bit) installer | `DDT4ALL-<version>-windows-x86-setup.exe` | Run the installer |
-| Windows portable | `DDT4ALL-<version>-windows-x64-portable.zip` | Unzip to a writable folder, run `DDT4ALL\DDT4ALL.exe` |
-| Debian / Ubuntu | `DDT4ALL-<version>-linux-x86_64.deb` | `sudo apt install ./DDT4ALL-<version>-linux-x86_64.deb` |
-| Fedora / RHEL / openSUSE | `DDT4ALL-<version>-linux-x86_64.rpm` | `sudo dnf install ./DDT4ALL-<version>-linux-x86_64.rpm` |
-| Linux AppImage | `DDT4ALL-<version>-linux-x86_64.AppImage` | `chmod +x DDT4ALL-<version>-linux-x86_64.AppImage` then run it |
-| macOS (Apple Silicon) | `DDT4ALL-<version>-macos-arm64.dmg` | Open the dmg, drag `DDT4ALL` to *Applications* |
+| Platform                       | File                                         | Install                                                        |
+| ------------------------------ | -------------------------------------------- | -------------------------------------------------------------- |
+| Windows x64 installer          | `DDT4ALL-UI-<version>-windows-x64-setup.exe`    | Run the installer                                              |
+| Windows x86 (32-bit) installer | `DDT4ALL-UI-<version>-windows-x86-setup.exe`    | Run the installer                                              |
+| Windows portable               | `DDT4ALL-UI-<version>-windows-x64-portable.zip` | Unzip to a writable folder, run `DDT4ALL-UI\DDT4ALL-UI.exe`          |
+| Debian / Ubuntu                | `DDT4ALL-UI-<version>-linux-x86_64.deb`         | `sudo apt install ./DDT4ALL-UI-<version>-linux-x86_64.deb`        |
+| Fedora / RHEL / openSUSE       | `DDT4ALL-UI-<version>-linux-x86_64.rpm`         | `sudo dnf install ./DDT4ALL-UI-<version>-linux-x86_64.rpm`        |
+| Linux AppImage                 | `DDT4ALL-UI-<version>-linux-x86_64.AppImage`    | `chmod +x DDT4ALL-UI-<version>-linux-x86_64.AppImage` then run it |
+| macOS (Apple Silicon)          | `DDT4ALL-UI-<version>-macos-arm64.dmg`          | Open the dmg, drag `DDT4ALL UI` to _Applications_                 |
 
 Notes:
 
 - **macOS** builds are not signed or notarized. On first launch use right-click →
   **Open**, or remove the quarantine flag:
-  `xattr -dr com.apple.quarantine /Applications/DDT4ALL.app`
+  `xattr -dr com.apple.quarantine "/Applications/DDT4ALL UI.app"`
 - **AppImage** needs FUSE (`libfuse2` on recent Ubuntu/Debian).
 - **Linux**: add your user to the `dialout` group for serial adapters (see [Platform notes](#platform-notes)).
+- **Side by side with the original DDT4All:** nothing is shared with a `cedricp/ddt4all` install: the
+  Python package/command (`ddt4all-ui`), the Windows installer ID and folder (`C:\Program Files\DDT4ALL UI`),
+  the Linux package (`ddt4all-ui`, `/opt/ddt4all-ui`), the macOS bundle (`DDT4ALL UI.app`) and the data folders
+  below all have their own names.
+- **Upgrading from 3.2.0:** that release used the name `DDT4ALL`. The per-user data folder moved from
+  `.../ddt4all` to `.../ddt4all-ui` (`~/.local/share/ddt4all` -> `~/.local/share/ddt4all-ui`,
+  `~/Library/Application Support/ddt4all` -> `.../ddt4all-ui`, and the `%LOCALAPPDATA%\ddt4all` equivalent on Windows pip installs
+  when the config is stored there). Nothing is migrated automatically: move `ecu.zip` / `ecus/` and
+  `config.json` to the new folder (or pick the database again with *Choose...*). A 3.2.0 Windows installer
+  install in `C:\Program Files\DDT4ALL` is not replaced; uninstall it separately.
 - **Test builds:** every pull request and every push to `master` builds all packages
-  as CI artifacts, kept for 14 days: GitHub → **Actions** → *Build packages* → pick a run →
+  as CI artifacts, kept for 14 days: GitHub → **Actions** → _Build packages_ → pick a run →
   **Artifacts**. Their version looks like `3.1.3-dev.<run number>.<commit>`.
 
 ---
 
 ## ECU database location
 
-DDT4ALL does **not** ship the ECU database. It looks for `ecu.zip` (or an extracted
-`ecus/` folder with `eculist.xml`) in its **working directory**, which depends on the build:
+DDT4ALL UI does **not** ship the ECU database; you supply your own copy. It can be a DDT4ALL
+`ecu.zip` or an extracted folder with `eculist.xml` (DDT2000 `ecus/` layout).
 
-| Build | Put `ecu.zip` / `ecus/` in |
-|-------|----------------------------|
-| Windows portable zip | the folder that contains `DDT4ALL.exe` |
-| Windows installer (x64 / x86) | the install folder (default `C:\Program Files\DDT4ALL`); the shortcuts start the app there. **The installer deletes this folder on reinstall, upgrade and uninstall, so keep a copy of `ecu.zip` elsewhere.** |
-| `.deb` / `.rpm` | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
-| macOS `.dmg` | `~/Library/Application Support/ddt4all/` (created on first run) |
-| AppImage | `~/.local/share/ddt4all/` (created on first run; honours `XDG_DATA_HOME`) |
-| Run from source | the directory you run `python -m ddt4all` from |
+**Choose it from the app (recommended).** In the start-up *Options* dialog, the
+**ECU database** row shows the database in use (or *not found*); click **Choose...** and pick
+either the `.zip` file or the folder. If no database is found when the main window opens,
+DDT4ALL UI offers the same choice. The path is saved as `ecu_database_path` in `config.json`, so
+the database can stay anywhere (another drive, a synced folder) and survives reinstalls.
+For an XML folder, loose GIF graphics are read from a `graphics/` folder next to `ecus/`.
+
+**Or put it in the working directory.** When `ecu_database_path` is not set or no longer
+exists, DDT4ALL UI falls back to `ecu.zip`, then `ecus/eculist.xml`, in its **working directory**,
+which depends on the build:
+
+| Build                         | Put `ecu.zip` / `ecus/` in                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows portable zip          | the folder that contains `DDT4ALL-UI.exe`                                                                                                                                                                        |
+| Windows installer (x64 / x86) | the install folder (default `C:\Program Files\DDT4ALL UI`); the shortcuts start the app there. **The installer deletes this folder on reinstall, upgrade and uninstall, so keep a copy of `ecu.zip` elsewhere.** |
+| `.deb` / `.rpm`               | `~/.local/share/ddt4all-ui/` (created on first run; honours `XDG_DATA_HOME`)                                                                                                                                     |
+| macOS `.dmg`                  | `~/Library/Application Support/ddt4all-ui/` (created on first run)                                                                                                                                               |
+| AppImage                      | `~/.local/share/ddt4all-ui/` (created on first run; honours `XDG_DATA_HOME`)                                                                                                                                     |
+| Run from source               | the directory you run `python -m ddt4all` from                                                                                                                                                                |
 
 The PyInstaller builds (portable zip, `.deb`, `.rpm`, `.dmg`) start through a small launcher
 ([`launcher.py`](setup_tools/pyinstaller/launcher.py)) that switches to the folder above before the
@@ -107,11 +131,12 @@ besides the ECU database it holds `config.json`, `json/` and `logs/` (the launch
 `json/` so the very first run already keeps its config there). Set `DDT4ALL_HOME` to use another folder:
 
 ```bash
-DDT4ALL_HOME=/data/ddt4all ddt4all                                               # Linux (.deb / .rpm)
-DDT4ALL_HOME=/data/ddt4all /Applications/DDT4ALL.app/Contents/MacOS/DDT4ALL      # macOS
+DDT4ALL_HOME=/data/ddt4all-ui ddt4all-ui                                               # Linux (.deb / .rpm)
+DDT4ALL_HOME=/data/ddt4all-ui "/Applications/DDT4ALL UI.app/Contents/MacOS/DDT4ALL-UI"      # macOS
 ```
+
 ```powershell
-$env:DDT4ALL_HOME = "D:\ddt4all"; .\DDT4ALL.exe   # Windows portable
+$env:DDT4ALL_HOME = "D:\ddt4all-ui"; .\DDT4ALL-UI.exe   # Windows portable
 ```
 
 `DDT4ALL_HOME` is read by that launcher and by the AppImage's `AppRun`; the Windows installer runs
@@ -120,8 +145,9 @@ Launchpad does not see shell environment variables, so `DDT4ALL_HOME` only works
 binary from a terminal as shown above. The normal builds have no console window; for
 troubleshooting build with `DDT4ALL_CONSOLE=1` (see [Building packages locally](#building-packages-locally)).
 
-**AppImage users:** if you kept `ecu.zip` (or `ecus/`) next to the AppImage file, move it to
-`~/.local/share/ddt4all/` (or the folder `DDT4ALL_HOME` points to); the AppImage no longer looks next to itself.
+**AppImage users:** if you kept `ecu.zip` (or `ecus/`) next to the AppImage file, select it with
+*Choose...* or move it to `~/.local/share/ddt4all-ui/` (or the folder `DDT4ALL_HOME` points to); the
+AppImage no longer looks next to itself.
 
 ---
 
@@ -139,19 +165,19 @@ troubleshooting build with `DDT4ALL_CONSOLE=1` (see [Building packages locally](
 
 ## Supported devices
 
-| Device | Available speeds | Default baud | Timeout | Flow control | Category | Notes |
-|--------|------------------|--------------|---------|--------------|----------|-------|
-| VLinker FS | 57600, 115200 | 38400 | 3 s | None | Enhanced | Most stable, best compatibility |
-| VGate iCar Pro | 115200, 230400, 500000, 1000000 | 115200 | 2 s | None | Enhanced | High-speed (up to 1 000 000 bps) |
-| ELM327 (original) | standard | 38400 | 5 s | None | General | Usually marked `PIC18F25K80` |
-| ELM327 (clone) | standard | 9600–38400 | 5 s | None | Budget | Try different baud settings |
-| ELM327 USB | standard | 38400 | 5 s | None | USB | Dedicated ELM327 USB (`STD_USB`) |
-| OBDLink SX | 500k / 1M / 2M | 115200 | 2 s | RTS/CTS | Professional | Highest-speed adapter |
-| OBDLink EX | 500k / 1M / 2M | 115200 | 2 s | RTS/CTS | Professional | Tested and confirmed |
-| ELS27 | standard | 38400 | 4 s | None | Alternative | Good ELM327 equivalent |
-| ELS27 V5 | standard | 38400 | 4 s | None | Enhanced | CAN pins 12-13, PyRen / Renolink compatible |
-| DERLEK USB-DIAG2/3 | standard | 38400 | 4 s | None | Professional | Auto pin swap, STN/STPX support * |
-| USB CAN | varies | 38400 | 5 s | None | Special | Automatic detection / fallback |
+| Device             | Available speeds                | Default baud | Timeout | Flow control | Category     | Notes                                       |
+| ------------------ | ------------------------------- | ------------ | ------- | ------------ | ------------ | ------------------------------------------- |
+| VLinker FS         | 57600, 115200                   | 38400        | 3 s     | None         | Enhanced     | Most stable, best compatibility             |
+| VGate iCar Pro     | 115200, 230400, 500000, 1000000 | 115200       | 2 s     | None         | Enhanced     | High-speed (up to 1 000 000 bps)            |
+| ELM327 (original)  | standard                        | 38400        | 5 s     | None         | General      | Usually marked `PIC18F25K80`                |
+| ELM327 (clone)     | standard                        | 9600–38400   | 5 s     | None         | Budget       | Try different baud settings                 |
+| ELM327 USB         | standard                        | 38400        | 5 s     | None         | USB          | Dedicated ELM327 USB (`STD_USB`)            |
+| OBDLink SX         | 500k / 1M / 2M                  | 115200       | 2 s     | RTS/CTS      | Professional | Highest-speed adapter                       |
+| OBDLink EX         | 500k / 1M / 2M                  | 115200       | 2 s     | RTS/CTS      | Professional | Tested and confirmed                        |
+| ELS27              | standard                        | 38400        | 4 s     | None         | Alternative  | Good ELM327 equivalent                      |
+| ELS27 V5           | standard                        | 38400        | 4 s     | None         | Enhanced     | CAN pins 12-13, PyRen / Renolink compatible |
+| DERLEK USB-DIAG2/3 | standard                        | 38400        | 4 s     | None         | Professional | Auto pin swap, STN/STPX support \*          |
+| USB CAN            | varies                          | 38400        | 5 s     | None         | Special      | Automatic detection / fallback              |
 
 > \* DERLEK USB-DIAG2/3 status: not checked on real hardware yet.
 
@@ -172,22 +198,21 @@ gettext catalogs are authored under `locales/` and compiled into
 `src/ddt4all/generated/locales/`. English is the source language (used as `msgid`);
 the following catalogues are shipped:
 
-| Code | Language |
-|------|----------|
-| `fr` | Français |
-| `pt` | Português |
-| `de` | Deutsch |
-| `es` | Español |
-| `it` | Italiano |
-| `ru` | Русский |
-| `pl` | Polski |
-| `nl` | Nederlands |
-| `hu` | Magyar |
-| `ro` | Română |
-| `sr` | Српски |
-| `tr` | Türkçe |
-| `cs_CZ` | Czech |
-| `uk_UA` | Українська |
+| Code    | Language       |
+| ------- | -------------- |
+| `fr`    | Français       |
+| `pt`    | Português      |
+| `de`    | Deutsch        |
+| `es`    | Español        |
+| `it`    | Italiano       |
+| `ru`    | Русский        |
+| `pl`    | Polski         |
+| `nl`    | ['Nederlands'] |
+| `hu`    | Magyar         |
+| `ro`    | Română         |
+| `sr`    | Српски         |
+| `tr`    | Türkçe         |
+| `cs_CZ` | Czech          |
 
 All catalogs are complete (content of all `msgstr` fields is present
 and no `#, fuzzy` remains), keep valid gettext syntax and preserve the original
@@ -218,8 +243,11 @@ python -m venv ./venv
 #   Linux / macOS:  source ./venv/bin/activate
 
 pip install -e ".[dev]"      # the package plus pytest and linting tools
-python -m ddt4all            # or simply: ddt4all
+python -m ddt4all            # or simply: ddt4all-ui
 ```
+
+On Windows `ddt4all-ui` starts without a console window; use `ddt4all-ui-cli` to see the
+log output in a terminal (or for the command-line subcommands).
 
 Charts demo without an adapter: `python -m ddt4all.ui.charts.demo [--dark]`.
 Tests: `QT_QPA_PLATFORM=offscreen pytest` (Windows PowerShell:
@@ -238,15 +266,19 @@ pip install "PyQt5>=5.15,<5.16" "PyQtWebEngine>=5.15,<5.16" pyserial==3.5 pyusb=
 
 Qt 5 cannot load its `platform` plugin when the virtualenv path contains non-ASCII
 characters (for example a Cyrillic folder name): the app stops with
-*"could not find or load the Qt platform plugin"*. Create the venv in an ASCII path:
+_"could not find or load the Qt platform plugin"_. Create the venv in an ASCII path:
 
 ```powershell
-python -m venv C:\venvs\ddt4all
-C:\venvs\ddt4all\Scripts\pip install -e ".[dev]"
-C:\venvs\ddt4all\Scripts\python -m ddt4all
+python -m venv C:\venvs\ddt4all-ui
+C:\venvs\ddt4all-ui\Scripts\pip install -e ".[dev]"
+C:\venvs\ddt4all-ui\Scripts\python -m ddt4all
 ```
 
 The source checkout itself can stay where it is.
+
+> **Distro (non-pip) PyQt5:** the icons are SVG, so the `QtSvg` module is required.
+> pip wheels include it; distro packages may ship it separately, e.g. Debian/Ubuntu:
+> `sudo apt install python3-pyqt5.qtsvg`.
 
 ### Windows: no wheel for PyQt5-Qt5
 
@@ -280,7 +312,7 @@ pip install -e ".[dev]"
 
 ### Quick start
 
-Start DDT4ALL, then use the built-in **connection test** to let it auto-detect the adapter
+Start DDT4ALL UI, then use the built-in **connection test** to let it auto-detect the adapter
 and the correct baud rate. On discovery, the optimal device configuration is applied.
 
 ---
@@ -374,13 +406,13 @@ The scripts install nothing: install the project and PyInstaller first
 [`setup_tools/pyinstaller/ddt4all.spec`](setup_tools/pyinstaller/ddt4all.spec); set
 `DDT4ALL_CONSOLE=1` before building to get a build that prints to a console.
 
-| Target | Command | Output | Extra tools |
-|--------|---------|--------|-------------|
-| Windows portable | `powershell -NoProfile -ExecutionPolicy Bypass -File setup_tools/windows/build-portable.ps1 3.1.3` | `dist-packages/DDT4ALL-3.1.3-windows-x64-portable.zip` | PyInstaller |
-| Linux deb + rpm | `bash setup_tools/linux/build-packages.sh 3.1.3` | `dist-packages/DDT4ALL-3.1.3-linux-x86_64.deb` and `.rpm` | PyInstaller, `fpm` (`gem install fpm`), `rpmbuild` (`apt install rpm`) |
-| macOS dmg | `bash setup_tools/mac-os/builddmg.sh 3.1.3` | `dist-packages/DDT4ALL-3.1.3-macos-<arch>.dmg` | PyInstaller, `hdiutil` (built in); optional `CODESIGN_IDENTITY` |
-| Linux AppImage | `bash setup_tools/appimage/build.sh 3.1.3` | `ddt4all-3.1.3-x86_64.AppImage` in the repo root (CI renames it to `DDT4ALL-3.1.3-linux-x86_64.AppImage`) | `wget`; bundles the active Python environment |
-| Windows installer | `ISCC.exe setup_tools\inno-win-setup\wininstaller.iss` (32-bit: `wininstaller-py3.8.6-inno-5-32-bits.iss`) | `setup_tools/inno-win-setup/Output/DDT4ALL-Windows-Installer-v<version>_Celestial-Nemean-<arch>.exe` | Inno Setup 6.2.2 (32-bit script: 5.6.1) and a prepared Python copy, see below |
+| Target            | Command                                                                                                    | Output                                                                                                    | Extra tools                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Windows portable  | `powershell -NoProfile -ExecutionPolicy Bypass -File setup_tools/windows/build-portable.ps1 3.1.3`         | `dist-packages/DDT4ALL-UI-3.1.3-windows-x64-portable.zip`                                                    | PyInstaller                                                                   |
+| Linux deb + rpm   | `bash setup_tools/linux/build-packages.sh 3.1.3`                                                           | `dist-packages/DDT4ALL-UI-3.1.3-linux-x86_64.deb` and `.rpm`                                                 | PyInstaller, `fpm` (`gem install fpm`), `rpmbuild` (`apt install rpm`)        |
+| macOS dmg         | `bash setup_tools/mac-os/builddmg.sh 3.1.3`                                                                | `dist-packages/DDT4ALL-UI-3.1.3-macos-<arch>.dmg`                                                            | PyInstaller, `hdiutil` (built in); optional `CODESIGN_IDENTITY`               |
+| Linux AppImage    | `bash setup_tools/appimage/build.sh 3.1.3`                                                                 | `ddt4all-ui-3.1.3-x86_64.AppImage` in the repo root (CI renames it to `DDT4ALL-UI-3.1.3-linux-x86_64.AppImage`) | `wget`; bundles the active Python environment                                 |
+| Windows installer | `ISCC.exe setup_tools\inno-win-setup\wininstaller.iss` (32-bit: `wininstaller-py3.8.6-inno-5-32-bits.iss`) | `setup_tools/inno-win-setup/Output/DDT4ALL-UI-Windows-Installer-v<version>_<codename>-<arch>.exe`      | Inno Setup 6.2.2 (32-bit script: 5.6.1) and a prepared Python copy, see below |
 
 The Windows installer bundles a full Python. Before compiling, copy a Python install that
 already has the project dependencies (`pip install -e ".[dev,can,network,bluetooth]"`) to
@@ -400,7 +432,7 @@ More details: [`setup_tools/README.md`](setup_tools/README.md), [`setup_tools/ma
    git tag v3.1.4
    git push origin v3.1.4
    ```
-4. The *Build packages* workflow ([`build.yml`](.github/workflows/build.yml)) builds all seven
+4. The _Build packages_ workflow ([`build.yml`](.github/workflows/build.yml)) builds all seven
    packages, and its `release` job publishes a GitHub Release with generated notes and every
    file attached. The tag name without `v` becomes the version in the file names.
 
@@ -423,7 +455,7 @@ until then no workflow runs. Only tags starting with `v` create a release.
 
 ### Installation
 
-- **PyQtWebEngine missing** — DDT4All still works; only the full web-based
+- **PyQtWebEngine missing** — DDT4ALL UI still works; only the full web-based
   documentation view is limited (graceful fallback).
 - **Windows serial fails** — reinstall `pywin32` and run
   `python -m pywin32_postinstall -install`, ideally with admin rights.
@@ -436,14 +468,13 @@ Module reference: [`documentation/`](documentation/).
 
 ## Credits and support
 
-DDT4ALL was created by **Cedric Paille** ([cedricp/ddt4all](https://github.com/cedricp/ddt4all)) and
-is developed with the help of many contributors (see `__contributors__` in
-[`src/ddt4all/version.py`](src/ddt4all/version.py)). This fork adds the redesigned UI and the packaging pipeline.
+DDT4ALL was created by **Cedric Paille** ([cedricp/ddt4all](https://github.com/cedricp/ddt4all)).
+This fork adds the redesigned UI and the packaging pipeline.
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=cedricpaille%40gmail.com&item_name=codetronic&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
-[![Sponsor](https://img.shields.io/badge/💖%20Sponsor-Support%20upstream-ea4aaa)](https://github.com/sponsors/Furtif)
-[![Discord](https://img.shields.io/discord/1117970325267820675?label=Discord&style=flat-square)](https://discord.gg/cBqDh9bTHP)
-
+- **Third-party:** the UI icons are based on [Lucide](https://lucide.dev) (ISC License,
+  Copyright (c) Lucide Contributors 2022; portions Copyright (c) Cole Bemis 2013-2022).
+  The licence text is in [`resources/icons/svg/LICENSE-lucide.txt`](resources/icons/svg/LICENSE-lucide.txt)
+  and ships in the packaged builds as `licenses/LICENSE-lucide.txt`.
 - **Discord (upstream community)**: [Join](https://discord.gg/cBqDh9bTHP)
 - **Fork issues** (UI, charts, packages, CI): [Tarodictrl/ddt4all-ui issues](https://github.com/Tarodictrl/ddt4all-ui/issues)
 - **Upstream issues** (diagnostics core, devices): [cedricp/ddt4all issues](https://github.com/cedricp/ddt4all/issues)
@@ -461,8 +492,8 @@ is developed with the help of many contributors (see `__contributors__` in
 
 ## License & disclaimer
 
-This project is **free software** under the **GPL-3.0-or-later** license. DDT4ALL is
-an independent, unofficial, educational tool and is *not* affiliated with any
+This project is **free software** under the **GPL-3.0-or-later** license. DDT4ALL UI is
+an independent, unofficial, educational tool and is _not_ affiliated with any
 vehicle/software brand. It is provided for study, testing and research only; it is
 not a replacement for factory/bench diagnostic tools. Use on a real vehicle is at
 your own risk — see the warnings at the top of this file.

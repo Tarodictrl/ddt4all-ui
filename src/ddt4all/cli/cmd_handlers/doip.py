@@ -21,25 +21,26 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 # TODO: Review DoIP CLI handler flow and test coverage.
 def cmd_doip(args: argparse.Namespace) -> int:
     # Test DoIP implementation with Electric ECU support
     doip_device = DoIPDevice()
-    
+
     if doip_device.connect():
         print(_("DoIP device connected successfully"))
-        
+
         # Test CAN initialization
         if doip_device.init_can():
             print(_("DoIP CAN initialized with Electric ECU support"))
-        
+
         # Test diagnostic request
         try:
             response = doip_device.request("22 F1 90")  # Read VIN
             print(_("DoIP response: %s") % response)
         except Exception as e:
             print(_("DoIP request failed: %s") % e)
-        
+
         # Test Electric ECU configurations
         electric_ecus = [
             ('EVC', {'idTx': 0x18DA10F1, 'idRx': 0x18DB10F1}),  # Electric Vehicle Controller
@@ -50,13 +51,13 @@ def cmd_doip(args: argparse.Namespace) -> int:
             ('BCM', {'idTx': 0x18DA60F1, 'idRx': 0x18DB60F1}),  # Body Control Module
             ('GWM', {'idTx': 0x18DA70F1, 'idRx': 0x18DB70F1})   # Gateway Module
         ]
-        
+
         for ecu_name, ecu_data in electric_ecus:
             print("\n" + _("Testing Electric ECU: %s") % ecu_name)
             doip_device.set_can_addr(ecu_name, ecu_data)
             response = doip_device.request("22 F1 90")  # Read VIN
             print(_("DoIP response: %s") % response)
-        
+
         doip_device.disconnect()
     else:
         print(_("Failed to connect to DoIP device"))

@@ -27,6 +27,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class UsbCan:
     _descriptor_warning_shown = False
 
@@ -40,7 +41,7 @@ class UsbCan:
         # Check if USB is available before attempting device detection
         if not USB_AVAILABLE:
             return False
-        
+
         # Test if USB backend is available before attempting device detection
         try:
             import usb.backend.libusb1
@@ -49,7 +50,7 @@ class UsbCan:
                 return False
         except ImportError:
             return False
-            
+
         # Try to find various USB CAN adapters
         # Standard USB CAN adapter
         self.device = core.find(idVendor=0x16c0, idProduct=0x05df)
@@ -58,12 +59,12 @@ class UsbCan:
             self.device_type = "usbcan"
             print(_("Found USB adapter:") + " %s" % self.descriptor)
             return True
-        
+
         # Try various USB OBD-II adapters that may support direct USB communication
         usb_adapters = [
             # ELS27 V5 and variants
             (0x0403, 0x6001, "FTDI based ELS27/ELM327"),
-            (0x10c4, 0xea60, "CP210x based ELS27/ELM327"), 
+            (0x10c4, 0xea60, "CP210x based ELS27/ELM327"),
             (0x1a86, 0x7523, "CH340 based ELS27/ELM327"),
             (0x067b, 0x2303, "PL2303 based ELS27/ELM327"),
             # VGate USB CAN adapters
@@ -84,7 +85,7 @@ class UsbCan:
             (0x108c, 0x0158, "Bosch MTS 6533"),
             (0x108c, 0x0159, "Bosch MTS 6534"),
         ]
-        
+
         for vid, pid, desc in usb_adapters:
             self.device = core.find(idVendor=vid, idProduct=pid)
             if self.device:
@@ -95,7 +96,7 @@ class UsbCan:
                         self.device_type = "els27"
                         device_name = "ELS27 V5" if "V5" in descriptor_str.upper() else "ELS27"
                     elif "VGATE" in descriptor_str.upper() or "ICAR" in descriptor_str.upper():
-                        self.device_type = "vgate"  
+                        self.device_type = "vgate"
                         device_name = "VGate"
                     elif "VLINKER" in descriptor_str.upper():
                         self.device_type = "vlinker"
@@ -119,7 +120,7 @@ class UsbCan:
                     else:
                         self.device_type = "els27"  # Default to ELS27
                         device_name = "ELS27"
-                    
+
                     self.descriptor = f"{device_name}: {descriptor_str}"
                     print(_("Found USB adapter:") + " %s" % self.descriptor)
                     return True
@@ -132,7 +133,7 @@ class UsbCan:
                         self.device_type = "vgate"
                         device_name = "VGate"
                     elif "Vlinker" in desc:
-                        self.device_type = "vlinker" 
+                        self.device_type = "vlinker"
                         device_name = "Vlinker"
                     elif "OBDLINK" in desc:
                         self.device_type = "obdlink"
@@ -150,7 +151,7 @@ class UsbCan:
                     else:
                         self.device_type = "usbcan"
                         device_name = "USB CAN"
-                    
+
                     self.descriptor = f"{device_name} (VID:{vid:04X} PID:{pid:04X})"
                     print(_("Found USB adapter:") + " %s" % self.descriptor)
                     return True
@@ -164,7 +165,7 @@ class UsbCan:
     def get_string_descriptor(self):
         if not USB_AVAILABLE:
             return _("USB not available")
-            
+
         try:
             response = self.device.ctrl_transfer(util.ENDPOINT_IN,
                                                  legacy.REQ_GET_DESCRIPTOR,
@@ -253,4 +254,3 @@ class UsbCan:
 
     def set_can_mode_monitor(self):
         self.set_vendor_request(VENDOR_CAN_MODE, CAN_MONITOR_MODE)
-

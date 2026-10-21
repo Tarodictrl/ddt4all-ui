@@ -2056,3 +2056,81 @@ msgstr ""
 
 msgid "Cannot save window layout: %s"
 msgstr ""
+
+msgid "ECU database:"
+msgstr ""
+
+msgid "not found"
+msgstr ""
+
+msgid "Choose..."
+msgstr ""
+
+msgid "Database file (ecu.zip)..."
+msgstr ""
+
+msgid "Extracted folder (eculist.xml)..."
+msgstr ""
+
+msgid "Select ECU database"
+msgstr ""
+
+msgid "Select ECU database folder"
+msgstr ""
+
+msgid "ECU database (*.zip eculist.xml)"
+msgstr ""
+
+msgid "All files (*)"
+msgstr ""
+
+msgid "No ECU database found at:"
+msgstr ""
+
+msgid "Choose a DDT4ALL 'ecu.zip' file or a folder containing 'eculist.xml'."
+msgstr ""
+
+msgid ""
+"DDT4ALL does not include the ECU database. Choose your 'ecu.zip' file or a "
+"folder containing 'eculist.xml'."
+msgstr ""
+
+msgid "Choose file..."
+msgstr ""
+
+msgid "Choose folder..."
+msgstr ""
+
+msgid "Cannot read ECU database"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "Wi-Fi"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "DoIP"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "OBDLink"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "ELS27"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "Vlinker"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "Derlek"
+msgstr ""
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "VGate"
+msgstr ""

@@ -5,7 +5,7 @@ from platformdirs import PlatformDirs
 BASE_DIR = Path(__file__).resolve().parent
 icons_base_dir = BASE_DIR / "resources" / "icons"
 
-_dirs = PlatformDirs("ddt4all")
+_dirs = PlatformDirs("ddt4all-ui")
 
 
 def is_run_from_src():

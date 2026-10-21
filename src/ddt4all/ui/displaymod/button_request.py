@@ -15,6 +15,7 @@ from ddt4all.ui.utils import (
 
 _ = options.translator('ddt4all')
 
+
 class ButtonRequest(widgets.QPushButton):
     def __init__(self, parent, uiscale, ecureq, count):
         super(ButtonRequest, self).__init__(parent)
@@ -49,9 +50,10 @@ class ButtonRequest(widgets.QPushButton):
 
         if text.upper().startswith("::BTN:"):
             gifName = text.replace("::BTN:|", "").replace("::btn:|", "").replace("::btn:DOWN|", "").replace("::btn:UP|", "").replace("::btn:LEFT|", "").replace("::btn:RIGHT|", "").replace("\\", "/")
-            image_data = os.path.join(options.graphics_dir, gifName + '.gif')
+            graphics_dir = options.get_graphics_dir()
+            image_data = os.path.join(graphics_dir, gifName + '.gif')
             if not os.path.exists(image_data):
-                image_data = os.path.join(options.graphics_dir, gifName + '.GIF')
+                image_data = os.path.join(graphics_dir, gifName + '.GIF')
             if os.path.exists(image_data):
                 with open(image_data, 'rb') as gif:
                     data = gif.read()
@@ -81,10 +83,11 @@ class ButtonRequest(widgets.QPushButton):
 
         if text.upper().startswith("::BTN:"):
             gifName = text.replace("::BTN:|", "").replace("::btn:|", "").replace("::btn:DOWN|", "").replace("::btn:UP|", "").replace("::btn:LEFT|", "").replace("::btn:RIGHT|", "").replace("\\", "/")
-            if os.path.exists("ecu.zip"):
-                image_data = self.extract_image_from_zip('ecu.zip', os.path.join(options.graphics_dir, gifName + '.gif'))
+            zip_path = options.get_ecu_zip_path()
+            if zip_path:
+                image_data = self.extract_image_from_zip(zip_path, os.path.join(options.graphics_dir, gifName + '.gif'))
                 if image_data is None:
-                    image_data = self.extract_image_from_zip('ecu.zip', os.path.join(options.graphics_dir, gifName + '.GIF'))
+                    image_data = self.extract_image_from_zip(zip_path, os.path.join(options.graphics_dir, gifName + '.GIF'))
                 if image_data:
                     pixmap = QPixmap()
                     byte_array = core.QByteArray(image_data)

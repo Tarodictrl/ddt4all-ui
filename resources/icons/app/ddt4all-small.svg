@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Simplified mark for 16-32 px renders: heavier stroke, no side stub, larger glyph and "!" -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#24272c"/>
+      <stop offset="1" stop-color="#1b1d21"/>
+    </linearGradient>
+  </defs>
+  <!-- lighter rim (thicker than in the big mark so it survives 16 px) -->
+  <rect x="1.5" y="1.5" width="61" height="61" rx="14" fill="url(#g)" stroke="#353a41" stroke-width="1.5"/>
+  <!-- glyph box is x 13..53, y 16..50 (centre 33,33): scale about the tile centre -->
+  <g transform="translate(32 32) scale(1.07) translate(-33 -33)">
+    <g fill="none" stroke="#5b9dff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13 21h9l4-5h12l4 5h6l5 5v14l-5 5h-6l-4 5H26l-4-5h-9Z"/>
+      <path d="M33 26v8"/>
+    </g>
+    <circle cx="33" cy="40.5" r="2.9" fill="#5b9dff"/>
+  </g>
+</svg>

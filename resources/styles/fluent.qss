@@ -246,12 +246,12 @@ QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
   background-color: {surface_alt};
 }
 QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
-  image: url(":/icons/up_arrow.png");
+  image: url("{arrow_up}");
   width: 8px;
   height: 8px;
 }
 QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
-  image: url(":/icons/down_arrow.png");
+  image: url("{arrow_down}");
   width: 8px;
   height: 8px;
 }
@@ -263,7 +263,7 @@ QComboBox::drop-down {
   width: 22px;
 }
 QComboBox::down-arrow {
-  image: url(":/icons/down_arrow.png");
+  image: url("{arrow_down}");
   width: 10px;
   height: 10px;
 }

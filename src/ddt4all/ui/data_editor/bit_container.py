@@ -4,6 +4,7 @@ import string
 import PyQt5.QtCore as core
 import PyQt5.QtWidgets as widgets
 
+
 class BitContainer(widgets.QFrame):
     def __init__(self, data, num, parent=None):
         super(BitContainer, self).__init__(parent)

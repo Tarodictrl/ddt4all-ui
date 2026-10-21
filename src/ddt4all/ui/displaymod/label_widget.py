@@ -17,6 +17,7 @@ from ddt4all.ui.utils import (
 
 _ = options.translator('ddt4all')
 
+
 class LabelWidget(widgets.QLabel):
     def __init__(self, parent, uiscale):
         super(LabelWidget, self).__init__(parent)
@@ -39,8 +40,9 @@ class LabelWidget(widgets.QLabel):
         return
 
     def get_zip_graphic(self, name):
-        if os.path.exists("ecu.zip"):
-            zf = zipfile.ZipFile("ecu.zip", "r")
+        zip_path = options.get_ecu_zip_path()
+        if zip_path:
+            zf = zipfile.ZipFile(zip_path, "r")
             zname = "graphics/" + name + ".gif"
             if zname not in zf.namelist():
                 zname = "graphics/" + name + ".GIF"
@@ -61,9 +63,9 @@ class LabelWidget(widgets.QLabel):
             img_name = text.replace("::pic:", "").replace("\\", "/")
             self.get_zip_graphic(img_name)
             if self.img is None:
-                imgname = os.path.join(options.graphics_dir, img_name) + ".gif"
+                imgname = os.path.join(options.get_graphics_dir(), img_name) + ".gif"
                 if not os.path.exists(imgname):
-                    imgname = os.path.join(options.graphics_dir, img_name) + ".GIF"
+                    imgname = os.path.join(options.get_graphics_dir(), img_name) + ".GIF"
                 # Ensure the path is a string and the file exists
                 if isinstance(imgname, str) and os.path.exists(imgname):
                     self.img = gui.QMovie(imgname)
@@ -109,9 +111,9 @@ class LabelWidget(widgets.QLabel):
             img_name = text.replace("::pic:", "").replace("\\", "/")
             self.get_zip_graphic(img_name)
             if self.img is None:
-                imgname = os.path.join(options.graphics_dir, img_name) + ".gif"
+                imgname = os.path.join(options.get_graphics_dir(), img_name) + ".gif"
                 if not os.path.exists(imgname):
-                    imgname = os.path.join(options.graphics_dir, img_name) + ".GIF"
+                    imgname = os.path.join(options.get_graphics_dir(), img_name) + ".GIF"
                 # Ensure the path is a string and the file exists
                 if isinstance(imgname, str) and os.path.exists(imgname):
                     self.img = gui.QMovie(imgname)

@@ -10,6 +10,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class EcuScanner:
     def __init__(self):
         self.totalecu = 0
@@ -206,10 +207,10 @@ class EcuScanner:
 
         # Check diagversion
         value_diag = can_response.replace(' ', '')[6:8]
-        
+
         try:
             diagversion = str(int(value_diag, 16))
-        except ValueError as err:
+        except ValueError:
             # debug
             # print(f"Failed to convert '{value_diag}': {err}")
             diagversion = value_diag
@@ -369,9 +370,10 @@ class EcuScanner:
         if options.simulation_mode:
             # Test data..
             # diagversion, supplier, soft, version, name, group, href, protocol, projects, address):
-            self.ecus["S2000_Atmo__SoftA3"] = EcuIdent("004", "213", "00A5", "8300", "UCH", "GRP",
-                                                        "S2000_Atmo___SoftA3.json",
-                                                        "KWP2000 FastInit MonoPoint", [], "7A")
+            self.ecus["S2000_Atmo__SoftA3"] = EcuIdent(
+                "004", "213", "00A5", "8300", "UCH", "GRP",
+                "S2000_Atmo___SoftA3.json",
+                "KWP2000 FastInit MonoPoint", [], "7A")
         else:
             # Use integrated DeviceManager for enhanced features
             if hasattr(options, 'elm') and options.elm:
@@ -464,7 +466,6 @@ class EcuScanner:
             else:
                 print(_("DoIP ECU at %(addr)s responded with minimal data: %(response)s") % {"addr": addr, "response": can_response})
         else:
-            # Handle other protocols (CAN, KWP)                
             if len(can_response) > 20:
                 try:
                     diagversion = str(int(can_response[6:8], 16))
@@ -485,16 +486,16 @@ class EcuScanner:
                 target_ip = getattr(options, 'doip_target_ip', '192.168.0.12')
                 target_port = getattr(options, 'doip_target_port', 13400)
                 timeout = getattr(options, 'doip_timeout', 5)
-                
+
                 print(_("Initializing DoIP connection to %(ip)s:%(port)s (timeout: %(timeout)ss)") % {"ip": target_ip, "port": target_port, "timeout": timeout})
-                
+
                 # Create DoIP device independently (not through ELM)
                 doip_device = DoIPDevice(target_ip, target_port)
-                
+
                 # Set timeout if supported
                 if hasattr(doip_device, 'timeout'):
                     doip_device.timeout = timeout
-                
+
                 if not doip_device.connect():
                     print("DoIP connection failed, cannot scan DoIP ECUs")
                     return
@@ -502,7 +503,7 @@ class EcuScanner:
                     print(_("DoIP connection established: %(ip)s:%(port)s") % {"ip": target_ip, "port": target_port})
                     # Store the device for scanning use
                     self.current_doip_device = doip_device
-                    
+
             except Exception as e:
                 print(_("DoIP initialization error: %s") % e)
                 return
@@ -539,7 +540,7 @@ class EcuScanner:
                     self.qapp.processEvents()
 
             text = _("Scanning DoIP address: ")
-            
+
             # Skip invalid addresses
             if addr not in self.ecu_database.addr_group_mapping:
                 # Try to get name from projects.json DoIP data
@@ -553,7 +554,7 @@ class EcuScanner:
                 try:
                     # Try long name first
                     print(("%(text)s%(addr)s ECU: %(name)s") % {"text": text, "addr": addr.ljust(35), "name": self.ecu_database.addr_group_mapping_long[addr]})
-                except:
+                except Exception:
                     print(("%(text)s%(addr)s ECU: %(name)s") % {"text": text, "addr": addr.ljust(35), "name": self.ecu_database.addr_group_mapping[addr]})
 
             if not options.simulation_mode:
@@ -562,7 +563,7 @@ class EcuScanner:
                     if hasattr(self, 'current_doip_device') and self.current_doip_device:
                         # Set target address for DoIP communication
                         self.current_doip_device.target_address = int(addr, 16)
-                        
+
                         # Start diagnostic session
                         if self.current_doip_device.start_session_can('10C0'):
                             # Send tester present
@@ -595,12 +596,12 @@ class EcuScanner:
 
         if not options.simulation_mode:
             # Clean up DoIP connection
-                try:
-                    # Close DoIP connection
-                    if hasattr(self.current_doip_device, 'disconnect'):
-                        self.current_doip_device.disconnect()
-                    print(_("DoIP connection closed"))
-                except Exception as e:
-                    print(_("Error closing DoIP connection: %s") % e)
-                finally:
-                    self.current_doip_device = None
+            try:
+                # Close DoIP connection
+                if hasattr(self.current_doip_device, 'disconnect'):
+                    self.current_doip_device.disconnect()
+                print(_("DoIP connection closed"))
+            except Exception as e:
+                print(_("Error closing DoIP connection: %s") % e)
+            finally:
+                self.current_doip_device = None

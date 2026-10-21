@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Shared PyInstaller spec for DDT4ALL (Windows, Linux, macOS), onedir mode.
+"""Shared PyInstaller spec for DDT4ALL UI (Windows, Linux, macOS), onedir mode.
 
 Run from anywhere:  python -m PyInstaller --noconfirm setup_tools/pyinstaller/ddt4all.spec
 
@@ -25,7 +25,8 @@ ICONS = os.path.join(ROOT, "resources", "icons")
 # Make the build independent of how the package was installed (editable or not).
 sys.path.insert(0, SRC)
 
-APP_NAME = "DDT4ALL"
+APP_NAME = "DDT4ALL-UI"      # executable / onedir folder name (no space)
+DISPLAY_NAME = "DDT4ALL UI"  # human-readable name (macOS bundle, Info.plist)
 IS_WIN = sys.platform.startswith("win")
 IS_MAC = sys.platform == "darwin"
 CONSOLE = os.environ.get("DDT4ALL_CONSOLE", "") == "1"
@@ -66,6 +67,10 @@ for dirpath, dirnames, filenames in os.walk(PLUGINS):
             continue
         dest = os.path.join("ddt4all", "plugins", os.path.relpath(dirpath, PLUGINS))
         datas.append((src, os.path.normpath(dest)))
+
+# Third-party licence texts (Lucide icons, ISC) ship next to the app, in
+# <bundle>/licenses/. The About box mentions this path.
+datas.append((os.path.join(ICONS, "svg", "LICENSE-lucide.txt"), "licenses"))
 
 # --- hidden imports ---------------------------------------------------------
 hiddenimports = list(collect_submodules("ddt4all"))
@@ -157,17 +162,17 @@ if IS_MAC:
     _bv = _bundle_version(VERSION)
     app = BUNDLE(
         coll,
-        name=APP_NAME + ".app",
+        name=DISPLAY_NAME + ".app",
         icon=os.path.join(ICONS, "obd.icns"),
-        bundle_identifier="com.github.cedricp.ddt4all",
+        bundle_identifier="com.github.tarodictrl.ddt4all-ui",
         version=_bv,
         info_plist={
-            "CFBundleName": APP_NAME,
-            "CFBundleDisplayName": "DDT4ALL Diagnostic Tool",
+            "CFBundleName": DISPLAY_NAME,
+            "CFBundleDisplayName": DISPLAY_NAME,
             "CFBundleShortVersionString": _bv,
             "CFBundleVersion": _bv,
             "CFBundleExecutable": APP_NAME,
-            "CFBundleIdentifier": "com.github.cedricp.ddt4all",
+            "CFBundleIdentifier": "com.github.tarodictrl.ddt4all-ui",
             "CFBundleInfoDictionaryVersion": "6.0",
             "CFBundlePackageType": "APPL",
             "CFBundleSignature": "DDT4",
@@ -179,15 +184,15 @@ if IS_MAC:
             "CFBundleDocumentTypes": [
                 {
                     "CFBundleTypeExtensions": ["ddt"],
-                    "CFBundleTypeName": "DDT4ALL Project File",
+                    "CFBundleTypeName": DISPLAY_NAME + " Project File",
                     "CFBundleTypeRole": "Editor",
                     "LSHandlerRank": "Owner",
                 }
             ],
             # Hardware access descriptions
-            "NSBluetoothAlwaysUsageDescription": "DDT4ALL needs Bluetooth access to communicate with OBD adapters.",
-            "NSBluetoothPeripheralUsageDescription": "DDT4ALL needs Bluetooth access to communicate with OBD adapters.",
-            "NSLocationWhenInUseUsageDescription": "DDT4ALL may use location services for enhanced diagnostic features.",
-            "NSUSBDeviceUsageDescription": "DDT4ALL needs USB access to communicate with OBD adapters.",
+            "NSBluetoothAlwaysUsageDescription": DISPLAY_NAME + " needs Bluetooth access to communicate with OBD adapters.",
+            "NSBluetoothPeripheralUsageDescription": DISPLAY_NAME + " needs Bluetooth access to communicate with OBD adapters.",
+            "NSLocationWhenInUseUsageDescription": DISPLAY_NAME + " may use location services for enhanced diagnostic features.",
+            "NSUSBDeviceUsageDescription": DISPLAY_NAME + " needs USB access to communicate with OBD adapters.",
         },
     )

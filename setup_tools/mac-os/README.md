@@ -1,6 +1,6 @@
-# DDT4ALL macOS build
+# DDT4ALL UI macOS build
 
-`builddmg.sh` builds `DDT4ALL.app` with PyInstaller and packs it into a `.dmg`
+`builddmg.sh` builds `DDT4ALL UI.app` with PyInstaller and packs it into a `.dmg`
 using only the tools that ship with macOS (`hdiutil`, `ditto`). No `create-dmg` needed.
 
 ## Files
@@ -37,9 +37,9 @@ Environment variables (optional):
 
 ## Output
 
-`dist-packages/DDT4ALL-<VERSION>-macos-<arch>.dmg`, where `<arch>` is `uname -m`
+`dist-packages/DDT4ALL-UI-<VERSION>-macos-<arch>.dmg`, where `<arch>` is `uname -m`
 (`arm64` on Apple Silicon, `x86_64` on Intel). The build is native to the machine it
-runs on, not universal. The volume contains `DDT4ALL.app` and an `Applications`
+runs on, not universal. The volume contains `DDT4ALL UI.app` and an `Applications`
 symlink for drag-and-drop installation.
 
 The Info.plist version is taken from `VERSION` (trimmed to dotted integers, so
@@ -48,7 +48,7 @@ The Info.plist version is taken from `VERSION` (trimmed to dotted integers, so
 ## Where the ECU database goes
 
 The app looks for `ecu.zip` and `ecus/` in its working folder, which for the
-bundled app is `~/Library/Application Support/ddt4all` (created on first launch).
+bundled app is `~/Library/Application Support/ddt4all-ui` (created on first launch).
 Override it with the `DDT4ALL_HOME` environment variable.
 
 ## Troubleshooting

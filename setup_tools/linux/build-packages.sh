@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build DDT4ALL .deb and .rpm packages (PyInstaller onedir + fpm).
+# Build DDT4ALL UI .deb and .rpm packages (PyInstaller onedir + fpm).
 #
 # Usage:   setup_tools/linux/build-packages.sh VERSION
 #   VERSION   release version WITHOUT a leading "v", e.g. 3.1.3 or 3.1.3-dev.42.abc1234
@@ -19,8 +19,8 @@
 #   DDT4ALL_OUT_DIR      where the packages are written             (default: <repo>/dist-packages)
 #
 # Outputs, in $DDT4ALL_OUT_DIR (<arch> = `uname -m`, x86_64 on CI):
-#   DDT4ALL-<VERSION>-linux-<arch>.deb
-#   DDT4ALL-<VERSION>-linux-<arch>.rpm
+#   DDT4ALL-UI-<VERSION>-linux-<arch>.deb
+#   DDT4ALL-UI-<VERSION>-linux-<arch>.rpm
 #
 # Package version mapping. "-" is reserved in deb/rpm version fields, and a plain
 # "3.1.3-dev.x" would sort AFTER the final "3.1.3", so:
@@ -30,13 +30,13 @@
 #                                                        the run number orders dev builds)
 #     3.1.3-rc.1               -> 3.1.3~rc.1
 #   fpm appends release/iteration "1" (deb 3.1.3-1, rpm 3.1.3-1).
-#   Package name: ddt4all.
+#   Package name: ddt4all-ui.
 #
 # Installed layout:
-#   /opt/ddt4all/                                   PyInstaller onedir contents (DDT4ALL binary)
-#   /usr/bin/ddt4all                                sh wrapper: exec /opt/ddt4all/DDT4ALL "$@"
-#   /usr/share/applications/ddt4all.desktop
-#   /usr/share/icons/hicolor/256x256/apps/ddt4all.png
+#   /opt/ddt4all-ui/                                   PyInstaller onedir contents (DDT4ALL-UI binary)
+#   /usr/bin/ddt4all-ui                                sh wrapper: exec /opt/ddt4all-ui/DDT4ALL-UI "$@"
+#   /usr/share/applications/ddt4all-ui.desktop
+#   /usr/share/icons/hicolor/256x256/apps/ddt4all-ui.png
 set -euo pipefail
 
 die() { echo "error: $*" >&2; exit 1; }
@@ -89,36 +89,36 @@ mkdir -p "$PYI_DIST" "$PYI_WORK" "$STAGE" "$SCRIPTS" "$OUT_DIR"
 echo "==> PyInstaller (version $VERSION)"
 DDT4ALL_VERSION="$VERSION" "$PYTHON" -m PyInstaller --noconfirm --clean \
     --distpath "$PYI_DIST" --workpath "$PYI_WORK" "$SPEC"
-[ -x "$PYI_DIST/DDT4ALL/DDT4ALL" ] || die "PyInstaller did not produce $PYI_DIST/DDT4ALL/DDT4ALL"
+[ -x "$PYI_DIST/DDT4ALL-UI/DDT4ALL-UI" ] || die "PyInstaller did not produce $PYI_DIST/DDT4ALL-UI/DDT4ALL-UI"
 
 # --- 2. stage the package tree ---------------------------------------------
 echo "==> Staging package tree"
 mkdir -p "$STAGE/opt" "$STAGE/usr/bin" "$STAGE/usr/share/applications" \
          "$STAGE/usr/share/icons/hicolor/256x256/apps"
-cp -a "$PYI_DIST/DDT4ALL" "$STAGE/opt/ddt4all"
+cp -a "$PYI_DIST/DDT4ALL-UI" "$STAGE/opt/ddt4all-ui"
 
-cat > "$STAGE/usr/bin/ddt4all" <<'WRAPPER'
+cat > "$STAGE/usr/bin/ddt4all-ui" <<'WRAPPER'
 #!/bin/sh
-exec /opt/ddt4all/DDT4ALL "$@"
+exec /opt/ddt4all-ui/DDT4ALL-UI "$@"
 WRAPPER
-chmod 755 "$STAGE/usr/bin/ddt4all"
+chmod 755 "$STAGE/usr/bin/ddt4all-ui"
 
-cat > "$STAGE/usr/share/applications/ddt4all.desktop" <<'DESKTOP'
+cat > "$STAGE/usr/share/applications/ddt4all-ui.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
-Name=DDT4All
+Name=DDT4ALL UI
 Comment=ECU diagnostic and parameter screen tool
-Exec=ddt4all
-Icon=ddt4all
+Exec=ddt4all-ui
+Icon=ddt4all-ui
 Categories=Development;Electronics;
 Terminal=false
-StartupWMClass=DDT4ALL
+StartupWMClass=DDT4ALL-UI
 DESKTOP
-chmod 644 "$STAGE/usr/share/applications/ddt4all.desktop"
+chmod 644 "$STAGE/usr/share/applications/ddt4all-ui.desktop"
 
 # The source icon is 272x272; hicolor/256x256 should hold exactly 256x256.
 # PyQt5 is a project dependency, so use it to scale; fall back to a plain copy.
-ICON_DEST="$STAGE/usr/share/icons/hicolor/256x256/apps/ddt4all.png"
+ICON_DEST="$STAGE/usr/share/icons/hicolor/256x256/apps/ddt4all-ui.png"
 if ! "$PYTHON" - "$ICON" "$ICON_DEST" <<'PYEOF' 2>/dev/null
 import sys
 from PyQt5.QtCore import Qt
@@ -156,29 +156,29 @@ DESCRIPTION="$("$PYTHON" - "$ROOT/pyproject.toml" <<'PYEOF'
 import re, sys
 text = open(sys.argv[1], encoding="utf-8").read()
 m = re.search(r'^description\s*=\s*"([^"]*)"', text, re.M)
-print(m.group(1) if m else "DDT4All ECU diagnostic tool")
+print(m.group(1) if m else "DDT4ALL UI ECU diagnostic tool")
 PYEOF
 )"
 
 fpm_common=(
     -s dir
     --force
-    -n ddt4all
+    -n ddt4all-ui
     -v "$PKG_VERSION"
     --iteration 1
     -a "$ARCH"
     --license "GPL-3.0-or-later"
     --url "https://github.com/Tarodictrl/ddt4all-ui"
-    --maintainer "DDT4All contributors"
-    --vendor "DDT4All"
+    --maintainer "DDT4ALL UI contributors"
+    --vendor "DDT4ALL UI"
     --description "$DESCRIPTION"
-    --directories /opt/ddt4all
+    --directories /opt/ddt4all-ui
     --after-install "$SCRIPTS/after-install.sh"
     -C "$STAGE"
 )
 
-DEB="$OUT_DIR/DDT4ALL-$VERSION-linux-$ARCH.deb"
-RPM="$OUT_DIR/DDT4ALL-$VERSION-linux-$ARCH.rpm"
+DEB="$OUT_DIR/DDT4ALL-UI-$VERSION-linux-$ARCH.deb"
+RPM="$OUT_DIR/DDT4ALL-UI-$VERSION-linux-$ARCH.rpm"
 
 echo "==> fpm: $DEB"
 fpm "${fpm_common[@]}" -t deb -p "$DEB" \

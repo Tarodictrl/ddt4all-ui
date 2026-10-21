@@ -2123,3 +2123,84 @@ msgstr "Достигнут лимит графиков: не больше %d п�
 
 msgid "Cannot save window layout: %s"
 msgstr "Не удалось сохранить раскладку окна: %s"
+
+msgid "ECU database:"
+msgstr "База ЭБУ:"
+
+msgid "not found"
+msgstr "не найдена"
+
+msgid "Choose..."
+msgstr "Выбрать..."
+
+msgid "Database file (ecu.zip)..."
+msgstr "Файл базы (ecu.zip)..."
+
+msgid "Extracted folder (eculist.xml)..."
+msgstr "Распакованная папка (eculist.xml)..."
+
+msgid "Select ECU database"
+msgstr "Выберите базу ЭБУ"
+
+msgid "Select ECU database folder"
+msgstr "Выберите папку базы ЭБУ"
+
+msgid "ECU database (*.zip eculist.xml)"
+msgstr "База ЭБУ (*.zip eculist.xml)"
+
+msgid "All files (*)"
+msgstr "Все файлы (*)"
+
+msgid "No ECU database found at:"
+msgstr "База ЭБУ не найдена по пути:"
+
+msgid "Choose a DDT4ALL 'ecu.zip' file or a folder containing 'eculist.xml'."
+msgstr ""
+"Выберите файл DDT4ALL 'ecu.zip' или папку, в которой лежит 'eculist.xml'."
+
+msgid ""
+"DDT4ALL does not include the ECU database. Choose your 'ecu.zip' file or a "
+"folder containing 'eculist.xml'."
+msgstr ""
+"База ЭБУ не входит в DDT4ALL. Укажите свой файл 'ecu.zip' или папку с "
+"'eculist.xml'."
+
+msgid "Choose file..."
+msgstr "Выбрать файл..."
+
+msgid "Choose folder..."
+msgstr "Выбрать папку..."
+
+msgid "Cannot read ECU database"
+msgstr "Не удалось прочитать базу ЭБУ"
+
+msgid "Close"
+msgstr "Закрыть"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "DoIP"
+msgstr "DoIP"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "OBDLink"
+msgstr "OBDLink"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "ELS27"
+msgstr "ELS27"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "Vlinker"
+msgstr "Vlinker"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "Derlek"
+msgstr "Derlek"
+
+#: src/ddt4all/ui/main_window/main_window_options.py
+msgid "VGate"
+msgstr "VGate"

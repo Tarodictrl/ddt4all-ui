@@ -15,6 +15,7 @@ from ddt4all.ui.utils import (
 
 _ = options.translator('ddt4all')
 
+
 class InputWidget(widgets.QWidget):
     def __init__(self, parent, uiscale, ecureq):
         super(InputWidget, self).__init__(parent)

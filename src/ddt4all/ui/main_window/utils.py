@@ -9,6 +9,7 @@ _ = options.translator('ddt4all')
 
 BASE_DIR = Path(__file__).resolve().parent
 
+
 def isWritable(path):
     try:
         testfile = tempfile.TemporaryFile(dir=path)
@@ -21,6 +22,7 @@ def isWritable(path):
         return False
     except Exception:
         return False
+
 
 def set_theme_style(app, onoff):
     options.dark_mode = bool(onoff)
@@ -36,6 +38,3 @@ def set_socket_timeout(onoff):
         options.configuration["socket_timeout"] = False
 
     options.save_config()
-
-
-

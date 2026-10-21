@@ -170,4 +170,3 @@ cmdb = '''
 #v2.1 ;AC  ; ATCTM5                ; CTM5               ; set Timer Multiplier to 5
 #v2.1 ;ACH ; ATZ                   ; Z                  ; reset all
 '''
-

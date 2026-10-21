@@ -9,6 +9,7 @@ import PyQt5.QtGui as gui
 import PyQt5.QtWidgets as widgets
 
 import ddt4all.options as options
+from ddt4all.core.ecu.ecu_database import EcuDatabase
 from ddt4all.core.ecu.ecu_file import EcuFile
 from ddt4all.core.ecu.ecu_scanner import EcuScanner
 from ddt4all.core.parameters.helpers import zipConvertXML
@@ -21,20 +22,11 @@ from ddt4all.ui.data_editor.button_editor import ButtonEditor
 from ddt4all.ui.data_editor.request_editor import RequestEditor
 from ddt4all.ui.data_editor.ecu_param_editor import EcuParamEditor
 from ddt4all.ui.data_editor.data_editor import DataEditor
+from ddt4all.ui.main_window.ecu_database_chooser import ask_for_database
 from ddt4all.ui.main_window.ecu_finder import EcuFinder
 from ddt4all.ui.main_window.ecu_list import EcuList
-from ddt4all.ui.main_window.icons_paths import (
-    ICON_OBD,
-    ICON_DTC,
-    ICON_LOG,
-    ICON_EXPERT,
-    ICON_EXPERT_B,
-    ICON_AUTOREFRESH,
-    ICON_REFRESH,
-    ICON_HEX,
-    ICON_COMMAND,
-    ICON_FLOWCONTROL,
-)
+from ddt4all.ui.main_window.icons_paths import ICON_OBD
+from ddt4all.ui.theme import icons
 from ddt4all.ui.main_window.main_window_options import MainWindowOptions
 from ddt4all.ui.main_window.utils import (
     isWritable,
@@ -60,6 +52,7 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent
 plugins_base_dir = BASE_DIR.parent.parent / "plugins"
 
+
 class MainWidget(widgets.QMainWindow):
     def __init__(self, app, vehicles, parent=None):
         super(MainWidget, self).__init__(parent)
@@ -76,48 +69,16 @@ class MainWidget(widgets.QMainWindow):
         self.plugins = {}
         self.carlist_sort_mode = "code"  # Default sorting by project code
         options.main_window = self  # Set reference for language switching
-        self.setWindowTitle(version.__appname__ + " - Version: " + version.__version__ + " - Build status: " + version.__codename__)
+        self.setWindowTitle(version.__appname__ + " - Version: " + version.__version__)
         self.ecu_scan = EcuScanner()
         self.ecu_scan.qapp = app
         options.socket_timeout = False
         options.ecu_scanner = self.ecu_scan
         print(_("%d loaded ECUs in database.") % self.ecu_scan.getNumEcuDb())
         if self.ecu_scan.getNumEcuDb() == 0:
-            msgbox = widgets.QMessageBox()
-            appIcon = gui.QIcon(ICON_OBD)
-            msgbox.setWindowIcon(appIcon)
-            msgbox.setWindowTitle(version.__appname__)
-            msgbox.setIcon(widgets.QMessageBox.Warning)
-            msgbox.setText(_("No database found"))
-            msgbox.setInformativeText(_("Check documentation"))
-            msgbox.exec_()
+            self.prompt_for_database()
 
         self.paramview = None
-        
-        # Initialize documentation view based on WebEngine availability
-        if HAS_WEBENGINE:
-            self.docview = webkitwidgets.QWebEngineView()
-            self.docview.load(core.QUrl("https://github.com/cedricp/ddt4all/wiki"))
-            
-            # Configure WebEngine settings for optimal GitHub wiki experience
-            settings = self.docview.settings()
-            settings.setAttribute(webkitwidgets.QWebEngineSettings.JavascriptEnabled, False)  # Disabled to prevent compatibility errors
-            settings.setAttribute(webkitwidgets.QWebEngineSettings.AutoLoadImages, True)     # Better visual experience
-            settings.setAttribute(webkitwidgets.QWebEngineSettings.PluginsEnabled, False)    # Security: disable plugins
-            settings.setAttribute(webkitwidgets.QWebEngineSettings.LocalStorageEnabled, False)  # Security: no local storage
-            settings.setAttribute(webkitwidgets.QWebEngineSettings.LocalContentCanAccessRemoteUrls, False)  # Security
-        else:
-            # Fallback to basic text widget for documentation
-            self.docview = widgets.QTextEdit()
-            self.docview.setReadOnly(True)
-            self.docview.setHtml(f"""
-            <h2>{_("DDT4All Documentation")}</h2>
-            <p><strong>{_("WebEngine not available.")}</strong> {_("For full documentation with web browsing capability, install PyQtWebEngine:")}</p>
-            <pre>pip install PyQtWebEngine</pre>
-            <p>{_("Visit the online documentation at:")} <br>
-            <a href="https://github.com/cedricp/ddt4all/wiki">https://github.com/cedricp/ddt4all/wiki</a></p>
-            <p>{_("This basic view will still show ECU documentation when available.")}</p>
-            """)
 
         self.screennames = []
 
@@ -133,16 +94,16 @@ class MainWidget(widgets.QMainWindow):
 
         # Remove fixed widths to allow widgets to size properly
         self.connectedstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
-        
+
         self.protocolstatus.setMinimumWidth(180)
         self.protocolstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
-        
+
         self.progressstatus.setMinimumWidth(200)
         self.progressstatus.setFixedHeight(8)
         self.progressstatus.setTextVisible(False)
         self.progressstatus.setVisible(False)
         self.progressstatus.setSizePolicy(widgets.QSizePolicy.Preferred, widgets.QSizePolicy.Fixed)
-        
+
         self.infostatus.setMinimumWidth(200)
         self.infostatus.setSizePolicy(widgets.QSizePolicy.Expanding, widgets.QSizePolicy.Fixed)
 
@@ -186,7 +147,6 @@ class MainWidget(widgets.QMainWindow):
 
         self.snifferview = Sniffer()
 
-        self.tabbedview.addTab(self.docview, _("Documentation"))
         self.tabbedview.addTab(self.scrollview, _("Screen"))
         self.tabbedview.addTab(self.snifferview, _("CAN Sniffer"))
 
@@ -228,7 +188,7 @@ class MainWidget(widgets.QMainWindow):
         self.treeview_ecu = widgets.QListWidget(self.treedock_ecu)
         self.treedock_ecu.setWidget(self.treeview_ecu)
         self.treeview_ecu.clicked.connect(self.changeECU)
-        
+
         self.ecunamemap = {}
 
         self.eculistwidget = EcuList(self.ecu_scan, self.treeview_ecu, self.vehicles)
@@ -258,40 +218,37 @@ class MainWidget(widgets.QMainWindow):
         self.toolbar.setObjectName("mainToolbar")
         self.toolbar.setContextMenuPolicy(core.Qt.PreventContextMenu)
 
-        self.diagaction = widgets.QAction(gui.QIcon(ICON_DTC), _("Read DTC"), self)
+        self.diagaction = widgets.QAction(icons.icon("dtc", danger=True), _("Read DTC"), self)
         self.diagaction.triggered.connect(self.readDtc)
         self.diagaction.setEnabled(False)
 
-        self.log = widgets.QAction(gui.QIcon(ICON_LOG), _("Full log"), self)
+        self.log = widgets.QAction(icons.icon("log"), _("Full log"), self)
         self.log.setCheckable(True)
         self.log.setChecked(options.log_all)
         self.log.triggered.connect(self.changeLogMode)
-        if options.dark_mode:
-            self.expert = widgets.QAction(gui.QIcon(ICON_EXPERT_B), _("Expert mode (enable writing)"), self)
-        else:
-            self.expert = widgets.QAction(gui.QIcon(ICON_EXPERT), _("Expert mode (enable writing)"), self)
+        self.expert = widgets.QAction(icons.icon("expert", danger=True), _("Expert mode (enable writing)"), self)
         self.expert.setCheckable(True)
         self.expert.setChecked(options.promode)
         self.expert.triggered.connect(self.changeUserMode)
 
-        self.autorefresh = widgets.QAction(gui.QIcon(ICON_AUTOREFRESH), _("Auto refresh"), self)
+        self.autorefresh = widgets.QAction(icons.icon("autorefresh"), _("Auto refresh"), self)
         self.autorefresh.setCheckable(True)
         self.autorefresh.setChecked(options.auto_refresh)
         self.autorefresh.triggered.connect(self.changeAutorefresh)
 
-        self.refresh = widgets.QAction(gui.QIcon(ICON_REFRESH), _("Refresh (one shot)"), self)
+        self.refresh = widgets.QAction(icons.icon("refresh"), _("Refresh (one shot)"), self)
         self.refresh.triggered.connect(self.refreshParams)
         self.refresh.setEnabled(not options.auto_refresh)
 
-        self.hexinput = widgets.QAction(gui.QIcon(ICON_HEX), _("Manual command"), self)
+        self.hexinput = widgets.QAction(icons.icon("hex"), _("Manual command"), self)
         self.hexinput.triggered.connect(self.hexeditor)
         self.hexinput.setEnabled(False)
 
-        self.cominput = widgets.QAction(gui.QIcon(ICON_COMMAND), _("Manual request"), self)
+        self.cominput = widgets.QAction(icons.icon("command"), _("Manual request"), self)
         self.cominput.triggered.connect(self.command_editor)
         self.cominput.setEnabled(False)
 
-        self.fctrigger = widgets.QAction(gui.QIcon(ICON_FLOWCONTROL), _("Software flow control"), self)
+        self.fctrigger = widgets.QAction(icons.icon("flowcontrol"), _("Software flow control"), self)
         self.fctrigger.setCheckable(True)
         self.fctrigger.triggered.connect(self.flow_control)
 
@@ -383,7 +340,7 @@ class MainWidget(widgets.QMainWindow):
         newecuction = tools_menu.addAction(_("Create New ECU"))
         newecuction.triggered.connect(self.newEcu)
         # Only show Zip database if ecu.zip doesn't exist (XML database)
-        if not os.path.exists("ecu.zip"):
+        if not options.get_ecu_zip_path():
             zipdbaction = tools_menu.addAction(_("Zip database"))
             zipdbaction.triggered.connect(self.zipdb)
         clearhistoryaction = tools_menu.addAction(_("Clear DDT4ALL History"))
@@ -407,7 +364,7 @@ class MainWidget(widgets.QMainWindow):
         self.carlist_order_by_name.setChecked(options.get_carlist_sort_mode() == "name")
         self.carlist_order_by_name.triggered.connect(self.setCarListOrderName)
         carlist_order_menu.addAction(self.carlist_order_by_name)
-        
+
         # Make actions mutually exclusive
         self.carlist_order_group = widgets.QActionGroup(self)
         self.carlist_order_group.addAction(self.carlist_order_by_code)
@@ -491,16 +448,9 @@ class MainWidget(widgets.QMainWindow):
         help_menu = menu.addMenu(_("Help"))
         wiki_about = help_menu.addAction(_("Web Wiki"))
         wiki_about.triggered.connect(self.wiki_about)
-        devs = help_menu.addMenu(_("About Developers"))
-        about_cedric = devs.addAction("Cedric PAILLE")
-        about_cedric.triggered.connect(self.about_cedric)
-        about_furtif = devs.addAction("--=FurtiF™=--")
-        about_furtif.triggered.connect(self.about_furtif)
-        githubupdate = help_menu.addAction(_("Get Git update"))
-        githubupdate.triggered.connect(self.git_update)
+        about_action = help_menu.addAction(_("About"))
+        about_action.triggered.connect(self.show_about)
         help_menu.addSeparator()
-        about_content = help_menu.addAction(_("About"))
-        about_content.triggered.connect(self.about_content_msg)
 
         restored = self._restore_window_state()
         self.setConnected(True)
@@ -508,21 +458,6 @@ class MainWidget(widgets.QMainWindow):
         self.showMaximized()
         if not restored:
             core.QTimer.singleShot(0, self._apply_default_dock_sizes)
-
-    def about_content_msg(self):
-        msgbox = widgets.QMessageBox()
-        appIcon = gui.QIcon(ICON_OBD)
-        msgbox.setWindowIcon(appIcon)
-        msgbox.setIcon(widgets.QMessageBox.Information)
-        msgbox.setWindowTitle(_("About DDT4ALL"))
-        text_about = version.__appname__ + _(" version:") + " %s" % version.__version__
-        msgbox.setText(text_about)
-        html = '<h2>' + _("Created by:") + " %s" % (version.__author__) + '</h2><table>'
-        for name, role in version.__contributors__.items():
-            html += f'<tr><td><a href="https://github.com/{name}" style="text-decoration: none; cursor: pointer;" target="_blank">{name}</a>: </td><td>{role}</td></tr>'
-        html += '</table>'
-        msgbox.setInformativeText(html)
-        msgbox.exec_()
 
     def setCarListOrderCode(self):
         """Set CarList sorting to by project code"""
@@ -618,17 +553,25 @@ class MainWidget(widgets.QMainWindow):
         url = core.QUrl("https://github.com/cedricp/ddt4all/wiki", core.QUrl.TolerantMode)
         gui.QDesktopServices().openUrl(url)
 
-    def about_cedric(self):
-        url = core.QUrl("https://github.com/cedricp", core.QUrl.TolerantMode)
-        gui.QDesktopServices().openUrl(url)
-
-    def about_furtif(self):
-        url = core.QUrl("https://github.com/Furtif", core.QUrl.TolerantMode)
-        gui.QDesktopServices().openUrl(url)
-
-    def git_update(self):
-        url = core.QUrl("https://github.com/cedricp/ddt4all/releases", core.QUrl.TolerantMode)
-        gui.QDesktopServices().openUrl(url)
+    def show_about(self):
+        """About box with the third-party notices that must ship with the app."""
+        msgbox = widgets.QMessageBox(self)
+        msgbox.setWindowIcon(gui.QIcon(ICON_OBD))
+        msgbox.setWindowTitle(_("About"))
+        msgbox.setTextFormat(core.Qt.RichText)
+        msgbox.setText(
+            "<b>%s %s</b><br>%s<br><br>%s" % (
+                version.__appname__,
+                version.__version__,
+                version.__copyright__,
+                "Icons based on <a href=\"https://lucide.dev\">Lucide</a> (ISC License), "
+                "Copyright (c) Lucide Contributors 2022; portions Copyright (c) "
+                "Cole Bemis 2013-2022 (Feather, MIT). "
+                "Full text: licenses/LICENSE-lucide.txt.",
+            )
+        )
+        msgbox.setIcon(widgets.QMessageBox.Information)
+        msgbox.exec_()
 
     def setIcon(self):
         appIcon = gui.QIcon(ICON_OBD)
@@ -655,14 +598,14 @@ class MainWidget(widgets.QMainWindow):
                         menu.setTitle(_("Plugins"))
                     elif "Help" in action.text() or _("Help") in action.text():
                         menu.setTitle(_("Help"))
-            
+
             # Update vehicle list with new language
             if hasattr(self, 'eculistwidget') and self.eculistwidget:
                 self.eculistwidget.refreshVehicleList()
-            
+
         except Exception as e:
             print(_("Error updating menu bar: %s") % e)
-            
+
     def show_options_dialog(self):
         """Show options dialog for device settings"""
         options_dialog = MainWindowOptions(self.app)
@@ -754,18 +697,30 @@ class MainWidget(widgets.QMainWindow):
         zipConvertXML(filename)
         self.logview.append(_("Zip job finished"))
 
+    def prompt_for_database(self):
+        """Offer to choose the ECU database when none is loaded.
+
+        Reloads the database after a choice; returns True once ECUs are loaded.
+        """
+        while self.ecu_scan.getNumEcuDb() == 0:
+            if not ask_for_database(self):
+                return False
+            self.reload_ecu_database()
+        return True
+
+    def reload_ecu_database(self):
+        """Reload ECUs from the (possibly newly configured) database."""
+        self.ecu_scan.ecu_database = EcuDatabase()
+        print(_("%d loaded ECUs in database.") % self.ecu_scan.getNumEcuDb())
+        if getattr(self, "eculistwidget", None) is not None:
+            self.eculistwidget.init()
+            self.eculistwidget.vehicle_combo.setEnabled(True)
+            self.eculistwidget.refreshVehicleList()
+
     def launchPlugin(self, pim):
         if self.paramview:
             self.paramview.init('')
-        if self.ecu_scan.getNumEcuDb() == 0:
-            msgbox = widgets.QMessageBox()
-            appIcon = gui.QIcon(ICON_OBD)
-            msgbox.setWindowIcon(appIcon)
-            msgbox.setWindowTitle(version.__appname__)
-            msgbox.setIcon(widgets.QMessageBox.Warning)
-            msgbox.setText(_("No database found"))
-            msgbox.setInformativeText(_("Check documentation"))
-            msgbox.exec_()
+        if self.ecu_scan.getNumEcuDb() == 0 and not self.prompt_for_database():
             return
         pim()
         if self.paramview:
@@ -777,7 +732,7 @@ class MainWidget(widgets.QMainWindow):
             return
 
         itemname = item.text(0)
-        nin = widgets.QInputDialog.getText(self, 'DDT4All', _('Enter new name'))
+        nin = widgets.QInputDialog.getText(self, version.__appname__, _('Enter new name'))
 
         if not nin[1]:
             return
@@ -797,18 +752,10 @@ class MainWidget(widgets.QMainWindow):
         item.setText(0, newitemname)
 
     def newCategory(self):
-        ncn = widgets.QInputDialog.getText(self, 'DDT4All', _('Enter category name'))
+        ncn = widgets.QInputDialog.getText(self, version.__appname__, _('Enter category name'))
         necatname = ncn[0]
         if necatname:
-            if self.ecu_scan.getNumEcuDb() == 0:
-                msgbox = widgets.QMessageBox()
-                appIcon = gui.QIcon(ICON_OBD)
-                msgbox.setWindowIcon(appIcon)
-                msgbox.setWindowTitle(version.__appname__)
-                msgbox.setIcon(widgets.QMessageBox.Warning)
-                msgbox.setText(_("No database found"))
-                msgbox.setInformativeText(_("Check documentation"))
-                msgbox.exec_()
+            if self.ecu_scan.getNumEcuDb() == 0 and not self.prompt_for_database():
                 return
             self.paramview.createCategory(necatname)
             self.treeview_params.addTopLevelItem(widgets.QTreeWidgetItem([necatname]))
@@ -825,7 +772,7 @@ class MainWidget(widgets.QMainWindow):
             item = item.parent()
 
         category = item.text(0)
-        nsn = widgets.QInputDialog.getText(self, 'DDT4All', _('Enter screen name'))
+        nsn = widgets.QInputDialog.getText(self, version.__appname__, _('Enter screen name'))
 
         if not nsn[1]:
             return
@@ -911,7 +858,7 @@ class MainWidget(widgets.QMainWindow):
         finally:
             self.progressstatus.setValue(0)
             self.progressstatus.setVisible(False)
-        
+
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
 
@@ -992,7 +939,7 @@ class MainWidget(widgets.QMainWindow):
         finally:
             self.progressstatus.setValue(0)
             self.progressstatus.setVisible(False)
-        
+
         # Try to restore last opened ECU after scan is complete
         self.restore_last_ecu()
 
@@ -1140,7 +1087,7 @@ class MainWidget(widgets.QMainWindow):
         vehicle_file = "vehicles/" + name + ".ecu"
         jsonfile = open(vehicle_file, "r")
         eculist = json.loads(jsonfile.read())
-        
+
         # Save last opened ECU
         options.set_last_opened_ecu(name)
         jsonfile.close()
@@ -1154,7 +1101,7 @@ class MainWidget(widgets.QMainWindow):
             item = widgets.QListWidgetItem(ecu[0])
             self.ecunamemap[ecu[0]] = ecu[1]
             self.treeview_ecu.addItem(item)
-        
+
         # Try to restore last opened ECU after loading ECU file
         self.restore_last_ecu()
 
@@ -1196,7 +1143,7 @@ class MainWidget(widgets.QMainWindow):
 
         self.paramview.pagename = screen
         inited = self.paramview.init(screen, self.screenlogfile)
-        
+
         # Adjust screen width to use full viewport width while preserving vertical scrolling
         if inited and hasattr(self.paramview, 'panel') and self.paramview.panel:
             viewport_width = self.scrollview.viewport().width()
@@ -1204,7 +1151,7 @@ class MainWidget(widgets.QMainWindow):
                 self.paramview.panel.screen_width = viewport_width
                 self.paramview.panel.resize(self.paramview.panel.screen_width, self.paramview.panel.screen_height)
                 self.paramview.resize(self.paramview.panel.screen_width + 50, self.paramview.panel.screen_height + 50)
-        
+
         self.diagaction.setEnabled(inited)
         self.hexinput.setEnabled(inited)
         self.cominput.setEnabled(inited)
@@ -1231,11 +1178,11 @@ class MainWidget(widgets.QMainWindow):
             del options.elm
         except AttributeError:
             pass
-    
+
     def resizeEvent(self, event):
         """Handle window resize to adjust screen widths while preserving vertical scrolling"""
         super(MainWidget, self).resizeEvent(event)
-        
+
         # Adjust screen width when window is resized
         if hasattr(self, 'paramview') and self.paramview and hasattr(self.paramview, 'panel') and self.paramview.panel:
             viewport_width = self.scrollview.viewport().width()
@@ -1267,7 +1214,12 @@ class MainWidget(widgets.QMainWindow):
         if ecu:
             if '.xml' not in ecu.href.lower():
                 isxml = False
-            ecu_file = options.ecus_dir + ecu.href
+            xml_dir = options.get_ecus_dir()
+            if isxml and xml_dir:
+                ecu_file = os.path.join(xml_dir, ecu.href)
+            else:
+                # Zipped/JSON ECUs keep the logical "ecus/" prefix (stripped later)
+                ecu_file = options.ecus_dir + ecu.href
             ecu_addr = ecu.addr
 
         if self.snifferview.set_file(ecu_file):
@@ -1280,7 +1232,7 @@ class MainWidget(widgets.QMainWindow):
             if ecu_file == self.paramview.ddtfile:
                 return
         self.set_param_file(ecu_file, ecu_addr, ecu_name, isxml)
-        
+
         # Save last opened ECU
         options.set_last_opened_ecu(ecu_name)
 
@@ -1299,8 +1251,10 @@ class MainWidget(widgets.QMainWindow):
             self.paramview.close()
             self.paramview.destroy()
 
-        self.paramview = ParamWidget(self.scrollview, ecu_file, ecu_addr, ecu_name, self.logview,
-                                                self.protocolstatus, self.canlinecombo.currentIndex())
+        self.paramview = ParamWidget(
+            self.scrollview, ecu_file, ecu_addr, ecu_name, self.logview,
+            self.protocolstatus, self.canlinecombo.currentIndex()
+        )
         self.paramview.infobox = self.infostatus
         self.paramview.attach_chart_sink(self.chartpanel)
         if options.simulation_mode:
@@ -1318,7 +1272,7 @@ class MainWidget(widgets.QMainWindow):
         self.paramview.uiscale = uiscale_mem
 
         self.scrollview.setWidget(self.paramview)
-        
+
         # Adjust screen width to use full viewport width while preserving vertical scrolling
         if hasattr(self.paramview, 'panel') and self.paramview.panel:
             viewport_width = self.scrollview.viewport().width()
@@ -1326,7 +1280,7 @@ class MainWidget(widgets.QMainWindow):
                 self.paramview.panel.screen_width = viewport_width
                 self.paramview.panel.resize(self.paramview.panel.screen_width, self.paramview.panel.screen_height)
                 self.paramview.resize(self.paramview.panel.screen_width + 50, self.paramview.panel.screen_height + 50)
-        
+
         screens = self.paramview.categories.keys()
         self.screennames = []
         for screen in screens:

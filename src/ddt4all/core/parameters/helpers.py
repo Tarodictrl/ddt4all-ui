@@ -23,29 +23,33 @@ from ddt4all.ui.utils import (
 
 _ = options.translator('ddt4all')
 
+
+def _collect_files(folder, arc_prefix, only_ext=None):
+    """List ``(path, arcname)`` for every file under ``folder``."""
+    found = []
+    if not folder or not os.path.isdir(folder):
+        return found
+    for dirpath, dirs, files in os.walk(folder):
+        for file in files:
+            if only_ext and only_ext not in file.lower():
+                continue
+            path = os.path.join(dirpath, file)
+            rel = os.path.relpath(path, folder).replace(os.sep, "/")
+            found.append((path, arc_prefix + "/" + rel))
+    return found
+
+
 def zipConvertXML(dbfilename="ecu.zip"):
     zipoutput = BytesIO()
-    options.ecus_dir = "./ecus"
 
-    ecus_glob = glob.glob("ecus/*.xml")
-    imgs = []
-    if os.path.exists("./graphics"):
-        for dirpath, dirs, files in os.walk("graphics/"):
-            for file in files:
-                if ".gif" in file.lower():
-                    imgs.append(os.path.join(dirpath, file))
+    # Source: the XML database (configured folder or ./ecus)
+    xml_dir = options.get_ecus_dir()
+    ecus_glob = glob.glob(os.path.join(xml_dir, "*.xml")) if xml_dir else []
+    base_dir = os.path.dirname(os.path.abspath(xml_dir)) if xml_dir else os.getcwd()
 
-    folder_29 = []
-    if os.path.exists("./$29"):
-        for dirpath, dirs, files in os.walk("$29/"):
-            for file in files:
-                folder_29.append(os.path.join(dirpath, file))
-
-    folder_utt = []
-    if os.path.exists("./utt_certificates"):
-        for dirpath, dirs, files in os.walk("utt_certificates/"):
-            for file in files:
-                folder_utt.append(os.path.join(dirpath, file))
+    imgs = _collect_files(options.get_graphics_dir(), "graphics", ".gif")
+    folder_29 = _collect_files(os.path.join(base_dir, "$29"), "$29")
+    folder_utt = _collect_files(os.path.join(base_dir, "utt_certificates"), "utt_certificates")
 
     if len(ecus_glob) == 0:
         print(_("Cannot zip database, no 'ecus' directory"))
@@ -62,18 +66,10 @@ def zipConvertXML(dbfilename="ecu.zip"):
 
     targetsdict = {}
     with zipfile.ZipFile(zipoutput, mode='w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
-        for img in imgs:
-            zf.write(img)
-        for file_29 in folder_29:
-            zf.write(file_29)
-        for file_utt in folder_utt:
-            zf.write(file_utt)
+        for path, arcname in imgs + folder_29 + folder_utt:
+            zf.write(path, arcname)
         for target in ecus:
-            filename = target.replace(".xml", ".json")
-            if filename.startswith("ecus/"):
-                filename = filename.replace("ecus/", "")
-            else:
-                filename = filename.replace("ecus\\", "")
+            filename = os.path.basename(target).replace(".xml", ".json")
             print(_("Starting processing ") + target + " " + str(i) + "/" + str(len(ecus)) + _(" to ") + filename)
 
             i += 1
@@ -101,6 +97,7 @@ def zipConvertXML(dbfilename="ecu.zip"):
     with open(dbfilename, "wb") as f:
         f.write(zipoutput.getvalue())
 
+
 def dumpXML(xmlname):
     try:
         xdom = xml.dom.minidom.parse(xmlname)
@@ -108,6 +105,7 @@ def dumpXML(xmlname):
     except Exception:
         return None
     return dumpDOC(xdoc)
+
 
 def dumpAddressing(file):
     xdom = xml.dom.minidom.parse(file)
@@ -339,10 +337,13 @@ def dumpDNAT_ext(file):
 
 
 def convertXML():
-    options.ecus_dir = "./ecus"
+    xml_dir = options.get_ecus_dir()
+    if not xml_dir:
+        print(_("Cannot zip database, no 'ecus' directory"))
+        return
 
-    ecus = glob.glob("ecus/*.xml")
-    ecus.remove("ecus/eculist.xml")
+    ecus = [e for e in glob.glob(os.path.join(xml_dir, "*.xml"))
+            if os.path.basename(e).lower() != options.ECU_DB_LIST_NAME]
     i = 1
 
     print(_("Opening ECU Database..."))
@@ -350,8 +351,7 @@ def convertXML():
     print(_("Starting conversion"))
 
     for target in ecus:
-        filename = target.replace(".xml", ".json")
-        filename = filename.replace("ecus/", "json/")
+        filename = os.path.join("json", os.path.basename(target).replace(".xml", ".json"))
         print(_("Starting processing ") + target + " " + str(i) + "/" + str(len(ecus)) + _(" to ") + filename)
 
         i += 1
@@ -417,8 +417,6 @@ def dumpVehicles(file=os.path.join("vehicles", "projects.xml")):
                     if test == "DoIP":
                         fcts = getChildNodesByName(prtc, u"Fct")
                         for fct in fcts:
-                            #print(fct.getAttribute(u"Name"))
-                            #print(int(fct.getAttribute(u"Value"), 16))
                             add_doip = int(fct.getAttribute(u"Value"), 16)
                             name_doip = fct.getAttribute(u"Name")
                             dictionary["projects"]["All"]["DoIP"][add_doip] = name_doip

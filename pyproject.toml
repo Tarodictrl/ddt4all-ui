@@ -5,8 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
-name = "ddt4all"
-version = "3.2.0"
+name = "ddt4all-ui"
+version = "4.0.0"
 description = "DDT4All is a comprehensive tool to create your own ECU parameters screens and connect to a CAN network with various OBD-II interfaces including ELM327, Vlinker FS, VGate, ObdLink SX, and ELS27 adapters."
 requires-python = ">=3.8"
 
@@ -58,8 +58,13 @@ bluetooth = [
     "bleak>=0.20.0; sys_platform == 'darwin'",
 ]
 
+# GUI launcher: no console window on Windows.
+[project.gui-scripts]
+ddt4all-ui = "ddt4all.main:main"
+
+# Same entry point with a console, for command-line use and debugging.
 [project.scripts]
-ddt4all = "ddt4all.main:main"
+ddt4all-ui-cli = "ddt4all.main:main"
 
 [tool.coverage.report]
 show_missing = true

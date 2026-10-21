@@ -17,6 +17,7 @@ import ddt4all.options as options
 
 _ = options.translator('ddt4all')
 
+
 class EcuFile:
     def __init__(self, data, isfile=False):
         self.requests = {}
@@ -41,8 +42,9 @@ class EcuFile:
 
         if isfile:
             if not os.path.exists(data):
-                if os.path.exists("./ecus/" + data + ".xml"):
-                    data = "./ecus/" + data + ".xml"
+                xml_dir = options.get_ecus_dir()
+                if xml_dir and os.path.exists(os.path.join(xml_dir, data + ".xml")):
+                    data = os.path.join(xml_dir, data + ".xml")
 
         if isfile and ".xml" not in data[-4:] and ".json" not in data[-5:]:
             xmlname = data + ".xml"
@@ -64,15 +66,17 @@ class EcuFile:
                 jsfile.close()
             else:
                 # Zipped json here
-                if os.path.exists('ecu.zip'):
-                    zf = zipfile.ZipFile('ecu.zip', mode='r')
-                    if data in zf.namelist():
-                        jsdata = zf.read(data)
-                    elif os.path.basename(data) in zf.namelist():
-                        jsdata = zf.read(os.path.basename(data))
-                    else:
-                        print(_("Cannot find file "), data)
-                        return
+                zip_path = options.get_ecu_zip_path()
+                if zip_path:
+                    with zipfile.ZipFile(zip_path, mode='r') as zf:
+                        names = zf.namelist()
+                        if data in names:
+                            jsdata = zf.read(data)
+                        elif os.path.basename(data) in names:
+                            jsdata = zf.read(os.path.basename(data))
+                        else:
+                            print(_("Cannot find file "), data)
+                            return
 
             if jsdata is None:
                 return

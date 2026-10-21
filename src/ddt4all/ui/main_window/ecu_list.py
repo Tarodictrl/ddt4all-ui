@@ -3,13 +3,12 @@ import json
 import locale
 
 import PyQt5.QtCore as core
-import PyQt5.QtGui as gui
 import PyQt5.QtWidgets as widgets
 
 import ddt4all.core.ecu.ecu_database as ecudb
 import ddt4all.core.elm.elm as elm
 import ddt4all.options as options
-from ddt4all.ui.main_window.icons_paths import ICON_SCAN
+from ddt4all.ui.theme import icons
 
 _ = options.translator('ddt4all')
 
@@ -39,7 +38,7 @@ class EcuList(widgets.QWidget):
         layout = widgets.QVBoxLayout()
         layouth = widgets.QHBoxLayout()
         scanbutton = widgets.QPushButton()
-        scanbutton.setIcon(gui.QIcon(ICON_SCAN))
+        scanbutton.setIcon(icons.icon("scan"))
         scanbutton.clicked.connect(self.scanselvehicle)
         layouth.addWidget(self.vehicle_combo)
         layouth.addWidget(scanbutton)
@@ -51,24 +50,24 @@ class EcuList(widgets.QWidget):
         self.ecuscan = ecuscan  # Store reference to ecuscan
         self.list.doubleClicked.connect(self.ecuSel)
         self.init()
-        
+
         # Schedule auto-filter and auto-select of last ECU after initialization is complete
         core.QTimer.singleShot(100, self.auto_restore_state)
 
     def populateVehicleCombo(self):
         """Populate vehicle combo box based on current sorting mode"""
         self.vehicle_combo.clear()
-        
+
         # Check if vehicles database is available AND has ECUs
         if not self.vehicles or not self.vehicles.get("projects") or self.ecuscan.getNumEcuDb() == 0:
             # No database available - add placeholder item
             self.vehicle_combo.addItem(_("No vehicles available"))
             self.vehicle_combo.setEnabled(False)
             return
-        
+
         # Get current sorting mode from configuration
         sort_mode = options.get_carlist_sort_mode()
-        
+
         if sort_mode == "name":
             # Sort by car name (extract from project key)
             vehicle_items = []
@@ -86,12 +85,12 @@ class EcuList(widgets.QWidget):
                         display_name = f"{name_part} - {code_part}"
                     else:
                         display_name = project_key
-                
+
                 vehicle_items.append((display_name, project_key))
-            
+
             # Sort by display name
             vehicle_items.sort(key=lambda x: x[0])
-            
+
             # Add to combo box
             for display_name, project_key in vehicle_items:
                 self.vehicle_combo.addItem(display_name, project_key)
@@ -99,10 +98,10 @@ class EcuList(widgets.QWidget):
             # Sort by project code (default behavior)
             for k in sorted(self.vehicles["projects"].keys()):
                 self.vehicle_combo.addItem(k, k)
-        
+
         # Enable combo box only if we have vehicles
         self.vehicle_combo.setEnabled(True)
-        
+
         # Restore last selected vehicle if available
         last_vehicle = options.get_last_selected_vehicle()
         if last_vehicle:
@@ -119,9 +118,9 @@ class EcuList(widgets.QWidget):
         """Refresh the vehicle combo box when sorting mode changes"""
         current_selection = self.vehicle_combo.currentText()
         current_data = self.vehicle_combo.currentData()
-        
+
         self.populateVehicleCombo()
-        
+
         # Try to restore previous selection
         if current_data:
             index = self.vehicle_combo.findData(current_data)
@@ -136,17 +135,17 @@ class EcuList(widgets.QWidget):
         # Check if vehicles database is available AND has ECUs
         if not self.vehicles or not self.vehicles.get("projects") or self.ecuscan.getNumEcuDb() == 0:
             return  # No database available, do nothing
-        
+
         # Get project key (works for both sorting modes)
         project_key = self.vehicle_combo.currentData()
         if project_key is None:
             # Fallback to current text for backward compatibility
             project_key = self.vehicle_combo.currentText()
-        
+
         # Skip if it's placeholder message
         if project_key == _("No vehicles available"):
             return
-        
+
         project = str(self.vehicles["projects"][project_key]["code"])
         ecudb.addressing = self.vehicles["projects"][project_key]["addressing"]
         elm.snat = self.vehicles["projects"][project_key]["snat"]
@@ -250,20 +249,20 @@ class EcuList(widgets.QWidget):
         # Check if vehicles database is available AND has ECUs
         if not self.vehicles or not self.vehicles.get("projects") or self.ecuscan.getNumEcuDb() == 0:
             return  # No database available, do nothing
-        
+
         # Get project key (works for both sorting modes)
         project_key = self.vehicle_combo.currentData()
         if project_key is None:
             # Fallback to current text for backward compatibility
             project_key = self.vehicle_combo.currentText()
-        
+
         # Skip if it's placeholder message
         if project_key == _("No vehicles available"):
             return
-        
+
         # Save last selected vehicle
         options.set_last_selected_vehicle(project_key)
-        
+
         project = str(self.vehicles["projects"][project_key]["code"])
         ecudb.addressing = self.vehicles["projects"][project_key]["addressing"]
         elm.snat = self.vehicles["projects"][project_key]["snat"]
@@ -308,7 +307,7 @@ class EcuList(widgets.QWidget):
                 # Try to restore last opened ECU after adding ECU to list
                 if options.main_window:
                     options.main_window.restore_last_ecu()
-    
+
     def auto_restore_state(self):
         """Auto-filter and auto-select the last opened ECU after initialization"""
         # Filter the ECU list for the selected vehicle
@@ -318,21 +317,21 @@ class EcuList(widgets.QWidget):
                 self.filterProject()
             except Exception as e:
                 print(f"Error filtering project: {e}")
-        
+
         # Auto-select the last opened ECU
         last_ecu = options.get_last_opened_ecu()
         if not last_ecu:
             return
-        
+
         # Extract ECU name from formatted name like "[ Audio ] ULC_gen4_v1.4"
         ecu_name = last_ecu
         if " ] " in last_ecu:
             ecu_name = last_ecu.split(" ] ", 1)[1]
-        
+
         # Search for the ECU in the ecu list tree
         root = self.list.invisibleRootItem()
         root_items = [root.child(i) for i in range(root.childCount())]
-        
+
         for root_item in root_items:
             items = [root_item.child(i) for i in range(root_item.childCount())]
             for item in items:

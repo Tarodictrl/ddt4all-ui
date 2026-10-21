@@ -1,31 +1,10 @@
-__appname__ = "DDT4ALL"
-__author__ = "Cedric PAILLE"
+__appname__ = "DDT4ALL UI"
+__author__ = "Daniil Detter"
 __copyright__ = "Copyright ©2016-2026"
 __credits__ = []
-__contributors__ = {
-    "Furtif": "Collaborator",
-    "jyte": "Contributor",
-    "bovirus": "Contributor",
-    "not-jan": "Contributor",
-    "joeyave": "Contributor",
-    "josefe17": "Contributor",
-    "shrlnm": "Contributor",
-    "jneuhauser": "Contributor",
-    "gobo-ws": "Contributor",
-    "Dante383": "Contributor",
-    "jan-stanek": "Contributor",
-    "mrechte": "Contributor",
-    "frederic34": "Contributor",
-    "memleketim05": "Contributor",
-    "landswellsong": "Contributor",
-    "krzeminskim": "Contributor",
-    "Jodaille": "Contributor",
-    "TA1GI": "Translator",
-    "walkman2021": "Translator"
-}
 __license__ = "GPL"
-__version__ = "3.2.0"
-__maintainer__ = "Cedric PAILLE"
-__email__ = "cedricpaille@gmail.com"
-__codename__ = "Celestial Nemean"
+__version__ = "4.0.0"
+__maintainer__ = "Daniil Detter"
+__email__ = "my@detter.ru"
+__codename__ = "Moonshine"
 __status__ = "dev"
