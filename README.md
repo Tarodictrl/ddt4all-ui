@@ -101,7 +101,7 @@ Notes:
 
 ## ECU database location
 
-DDT4ALL UI does **not** ship the ECU database; you supply your own copy. It can be a DDT4ALL
+DDT4ALL UI needs a DDT2000 ECU database. It can be a DDT4ALL
 `ecu.zip` or an extracted folder with `eculist.xml` (DDT2000 `ecus/` layout).
 
 **Choose it from the app (recommended).** In the start-up *Options* dialog, the
@@ -418,6 +418,8 @@ The Windows installer bundles a full Python. Before compiling, copy a Python ins
 already has the project dependencies (`pip install -e ".[dev,can,network,bluetooth]"`) to
 `\DDT4ALL-Dist-Versions\Python313` on the drive root (32-bit script: `\DDT4ALL-Dist-Versions\Python38-32`).
 The installer takes its version from `setup_tools/inno-win-setup/version.h`.
+It also bundles the ECU database: put `ecu.zip` into `setup_tools/inno-win-setup/` before compiling
+(CI downloads it from the URL set at the top of `build.yml`).
 More details: [`setup_tools/README.md`](setup_tools/README.md), [`setup_tools/mac-os/README.md`](setup_tools/mac-os/README.md).
 
 ---
@@ -435,6 +437,9 @@ More details: [`setup_tools/README.md`](setup_tools/README.md), [`setup_tools/ma
 4. The _Build packages_ workflow ([`build.yml`](.github/workflows/build.yml)) builds all seven
    packages, and its `release` job publishes a GitHub Release with generated notes and every
    file attached. The tag name without `v` becomes the version in the file names.
+   The same run downloads `ecu.zip` from `ECU_ZIP_URL` in `build.yml` (checked against
+   `ECU_ZIP_SHA256`), bundles it into both Windows installers and attaches it to the release as
+   `ecu.zip`. To ship a newer database, change both values.
 
 GitHub Actions must be enabled once on the fork (**Actions** tab → enable workflows);
 until then no workflow runs. Only tags starting with `v` create a release.

@@ -65,6 +65,8 @@ Source: "..\..\src\*"; DestDir: "{app}\src"; Flags: ignoreversion createallsubdi
 Source: "..\..\pyproject.toml"; DestDir: "{app}"; Flags: ignoreversion; Permissions: users-full
 Source: "..\..\README.md"; DestDir: "{app}"; Flags: ignoreversion; Permissions: users-full
 Source: "..\..\license.txt"; DestDir: "{app}"; Flags: ignoreversion; Permissions: users-full
+; ECU database (CI downloads it next to this script); a zip already, so no recompression
+Source: "ecu.zip"; DestDir: "{app}"; Flags: ignoreversion nocompression; Permissions: users-full
 Source: "fixModX64.bat"; DestDir: "{app}"; Flags: ignoreversion; Permissions: users-full; AfterInstall: AfterMyProgInstall
 
 [InstallDelete]
